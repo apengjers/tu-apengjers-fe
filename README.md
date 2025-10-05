@@ -1,12 +1,17 @@
-# React + Vite
+# tu-apengjers-fe
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ini adalah repository **front-end** dari website yang sedang saya kembangkan.
 
-Currently, two official plugins are available:
+Dibuat menggunakan teknologi web modern (seperti React/Vite), dan terhubung dengan API dari back-end untuk menjalankan berbagai fitur pada aplikasi.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Status
 
-## Expanding the ESLint configuration
+🚧 Masih dalam tahap pengembangan.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tujuan
+
+Menyediakan antarmuka pengguna (UI) untuk aplikasi utama TU Apengjers.
+
+## Catatan
+
+Repository ini hanya berisi bagian front-end dari project. Untuk backend dan dokumentasi lebih lanjut, akan disediakan nanti.
