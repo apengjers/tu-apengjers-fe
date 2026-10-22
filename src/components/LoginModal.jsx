@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { FiArrowLeft, FiEye, FiEyeOff } from 'react-icons/fi'; // ← tambahkan FiEye dan FiEyeOff
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,7 +13,7 @@ export default function LoginModal({ show, onClose }) {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:3001/auth/login', {
+      const res = await api.post('/auth/login', {
         email,
         password
       });

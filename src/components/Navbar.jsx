@@ -1,137 +1,114 @@
-import { useEffect, useState } from 'react';
-import { FaMoon, FaSun, FaUser, FaSearch } from "react-icons/fa";
-import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
-import { FiDollarSign } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
-import { TbHomeShield } from "react-icons/tb";
-import LoginModal from './LoginModal';
+import { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { FiBookOpen, FiGift, FiHome, FiLogIn, FiMenu, FiX, FiZap } from "react-icons/fi";
+import { TbClipboardCheck } from "react-icons/tb";
+import LoginModal from "./LoginModal";
+
+const navItems = [
+  { to: "/", label: "Beranda", icon: FiHome, end: true },
+  { to: "/joki-roblox", label: "Joki Roblox", icon: FiZap },
+  { to: "/gift-item", label: "Gift Item", icon: FiGift },
+  { to: "/cara-order", label: "Cara Order", icon: FiBookOpen },
+  { to: "/cek-transaksi", label: "Cek Pesanan", icon: TbClipboardCheck },
+];
+
+const getLinkClass = (isActive, mobile = false) =>
+  `flex items-center gap-2 rounded-xl font-semibold transition-colors ${
+    mobile ? "w-full px-4 py-3 text-sm" : "px-3 py-2 text-sm"
+  } ${
+    isActive
+      ? "bg-blue-50 text-blue-800"
+      : "text-slate-600 hover:bg-slate-50 hover:text-blue-800"
+  }`;
 
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [showNavbar, setShowNavbar] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
-
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-  const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
-
-  const controlNavbar = () => {
-    if (typeof window !== 'undefined') {
-      if (window.scrollY > lastScrollY) {
-        setShowNavbar(false);
-      } else {
-        setShowNavbar(true);
-      }
-      setLastScrollY(window.scrollY);
-    }
-  };
+  const location = useLocation();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlNavbar);
-      return () => {
-        window.removeEventListener('scroll', controlNavbar);
-      };
-    }
-  }, [lastScrollY]);
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <>
-      <header
-        className={`w-full bg-white shadow-md fixed top-0 z-50 transition-transform duration-300 ${
-          showNavbar ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/95 text-left shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+          <NavLink to="/" className="flex shrink-0 items-center gap-2" aria-label="ApengJers, beranda">
+            <img src="/logo-apengjers.png" alt="" className="h-11 w-11 object-contain" />
+            <span className="hidden text-base font-extrabold tracking-tight text-slate-900 sm:block">
+              Apeng<span className="text-orange-500">Jers</span>
+            </span>
+          </NavLink>
 
-        <div className="w-full px-4 py-2 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <img src="/logo-apengjers.png" alt="logo" className="w-15 h-15" />
-          </div>
-
-          <nav className="hidden md:flex items-center space-x-6 text-gray-700 relative">
-            <a href="/" className="flex items-center gap-1 hover:text-blue-500 size text-xl">
-              <TbHomeShield />Beranda</a>
-            <a href="/cek-transaksi" className="flex items-center gap-1 hover:text-blue-500 size text-xl">
-              <FiDollarSign /> Cek Transaksi
-            </a>
-
-            <div className="relative">
-              <button
-                onClick={toggleDropdown}
-                className="flex items-center gap-1 hover:text-blue-500 size text-xl"
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Navigasi utama">
+            {navItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) => getLinkClass(isActive)}
               >
-                <FaUser /> Akun Saya
-              </button>
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-40 bg-white border shadow-md rounded-md z-20"
-                  >
-                    <button onClick={() => setShowLoginModal(true)} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Login</button>
-                    <button onClick={() => setShowLoginModal(true)} className="block w-full text-left px-4 py-2 hover:bg-gray-100">Register</button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <button onClick={toggleSearch} className="text-gray-500 hover:text-blue-500">
-              <FaSearch />
-            </button>
+                <Icon aria-hidden="true" className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
           </nav>
 
-          <button className="md:hidden text-gray-700" onClick={toggleMobileMenu}>
-            {isMobileMenuOpen ? <HiOutlineX size={24} /> : <HiOutlineMenu size={24} />}
+          <div className="hidden shrink-0 lg:block">
+            <button
+              type="button"
+              onClick={() => setShowLoginModal(true)}
+              className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+            >
+              <FiLogIn aria-hidden="true" className="h-4 w-4" />
+              Masuk
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-50 lg:hidden"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            aria-label={isMobileMenuOpen ? "Tutup menu" : "Buka menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+          >
+            {isMobileMenuOpen ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
           </button>
         </div>
 
-        <AnimatePresence>
-          {isSearchOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-white shadow-md px-4 py-3"
-            >
-              <div className="max-w-full mx-auto">
-                <input
-                  type="text"
-                  placeholder="Cari berita, promo, atau game..."
-                  className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white px-4 pb-4 shadow flex flex-col items-center text-center">
-            <a href="/" className="block py-2 text-gray-700 hover:text-blue-500">Beranda</a>
-            <a href="/cek-transaksi" className="block py-2 text-gray-700 hover:text-blue-500">Cek Transaksi</a>
-            <button
-              onClick={() => {
-                setShowLoginModal(true);
-                setIsMobileMenuOpen(false);
-              }}
-              className="block w-full text-center py-2 text-gray-700 hover:text-blue-500"
-            >
-              Login / Register
-            </button>
-            <button 
-              className="w-full flex flex-row items-center justify-center gap-2 py-2 text-gray-700 hover:text-blue-500" 
-              onClick={toggleSearch}
-            >
-              Cari <FaSearch />
-            </button>
-
-          </div>
+          <nav
+            id="mobile-navigation"
+            className="border-t border-slate-100 bg-white px-4 pb-4 pt-3 shadow-lg lg:hidden sm:px-6"
+            aria-label="Navigasi mobile"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col gap-1">
+              {navItems.map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) => getLinkClass(isActive, true)}
+                >
+                  <Icon aria-hidden="true" className="h-4 w-4" />
+                  {label}
+                </NavLink>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowLoginModal(true);
+                }}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-900"
+              >
+                <FiLogIn aria-hidden="true" className="h-4 w-4" />
+                Masuk
+              </button>
+            </div>
+          </nav>
         )}
       </header>
 
