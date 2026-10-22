@@ -11,6 +11,7 @@ import PulsaPage from './pages/PulsaPage';
 import AplikasiPage from './pages/AplikasiPage';
 import CekTransaksi from './pages/CekTransaksi';
 import AdminProduct from './pages/AdminProduct';
+import StorefrontPlaceholder from './components/StorefrontPlaceholder';
 
 
 function HomePage() {
@@ -37,6 +38,36 @@ function App() {
           <Route path="ewallet" element={<EwalletPage />} />
           <Route path="pulsa" element={<PulsaPage />} /> 
           <Route path="aplikasi" element={<AplikasiPage />} /> 
+          <Route
+            path="joki-roblox"
+            element={
+              <StorefrontPlaceholder
+                eyebrow="Layanan Roblox"
+                title="Joki Roblox"
+                description="Pilih layanan joki sesuai game dan target yang kamu inginkan. Katalog paket akan segera hadir."
+              />
+            }
+          />
+          <Route
+            path="gift-item"
+            element={
+              <StorefrontPlaceholder
+                eyebrow="Gift Item"
+                title="Kirim item game sebagai hadiah"
+                description="Temukan item gift yang tersedia dan kirimkan ke username penerima. Katalog gift sedang disiapkan."
+              />
+            }
+          />
+          <Route
+            path="cara-order"
+            element={
+              <StorefrontPlaceholder
+                eyebrow="Panduan Pemesanan"
+                title="Cara order di ApengJers"
+                description="Panduan memilih layanan, mengisi detail pesanan, membayar, dan memantau progres akan tersedia di sini."
+              />
+            }
+          />
           <Route path="*" element={<NotFound />} />
           <Route path="cek-transaksi" element={<CekTransaksi />} />
           <Route path="adminproduct" element={<AdminProduct />} />
