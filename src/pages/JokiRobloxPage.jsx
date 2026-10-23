@@ -37,7 +37,7 @@ export default function JokiRobloxPage() {
 
   useEffect(() => {
     let isActive = true;
-    Promise.all([api.get("/api/products", { params: { jenis: "joki" } }), api.get("/api/games")])
+    Promise.all([api.get("/api/products", { params: { jenis: "joki" } }), api.get("/api/games", { params: { jenis: "joki" } })])
       .then(([productsResponse, gamesResponse]) => {
         const products = Array.isArray(productsResponse.data) ? productsResponse.data : [];
         const catalogGames = Array.isArray(gamesResponse.data) ? gamesResponse.data : [];

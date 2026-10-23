@@ -40,6 +40,7 @@ function App() {
             path="gift-item"
             element={<GiftItemPage />}
           />
+          <Route path="gift-item/:gameSlug" element={<GiftItemPage />} />
           <Route path="pesan/joki-roblox" element={<OrderFormPage orderType="joki" />} />
           <Route path="pesan/gift-item" element={<OrderFormPage orderType="gift" />} />
           <Route path="cara-order" element={<CaraOrderPage />} />

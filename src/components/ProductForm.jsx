@@ -9,10 +9,11 @@ export default function ProductForm({ initialData, games = [], onSuccess, onCanc
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const isEditing = Boolean(initialData?._id);
+  const availableGames = games.filter((game) => formData.jenis === "joki" ? (!game.jenis || game.jenis === "joki") : game.jenis === "gift");
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    setFormData((current) => ({ ...current, [name]: value, ...(name === "jenis" ? { game: "" } : {}) }));
   };
 
   const handleSubmit = async (event) => {
@@ -23,12 +24,12 @@ export default function ProductForm({ initialData, games = [], onSuccess, onCanc
       nama: formData.nama.trim(),
       jenis: formData.jenis,
       harga: Number(formData.harga),
-      kategori: (formData.kategori || "").trim(),
+      kategori: (availableGames.find((game) => game._id === formData.game)?.nama || formData.kategori || "").trim(),
       stok: Number(formData.stok) || 0,
       gambar: formData.gambar.trim(),
       deskripsi: formData.deskripsi.trim(),
     };
-    if (formData.jenis === "joki") payload.game = formData.game;
+    if (formData.jenis === "joki" || (formData.jenis === "gift" && formData.game)) payload.game = formData.game;
 
     try {
       if (isEditing) await api.put(`/api/products/${initialData._id}`, payload);
@@ -55,7 +56,7 @@ export default function ProductForm({ initialData, games = [], onSuccess, onCanc
         <div><label htmlFor="harga" className={labelClass}>Harga (Rp) <span className="text-rose-500">*</span></label><input id="harga" name="harga" type="number" min="0" step="1" value={formData.harga} onChange={handleChange} required placeholder="25000" className={inputClass} /></div>
         <div><label htmlFor="stok" className={labelClass}>Stok tersedia</label><input id="stok" name="stok" type="number" min="0" step="1" value={formData.stok} onChange={handleChange} placeholder="0" className={inputClass} /></div>
         <div><label htmlFor="jenis" className={labelClass}>Jenis katalog</label><select id="jenis" name="jenis" value={formData.jenis || "topup"} onChange={handleChange} className={inputClass}><option value="gift">Gift Item Roblox</option><option value="joki">Paket Joki Roblox</option><option value="topup">Produk katalog lain</option></select></div>
-        {formData.jenis === "joki" ? <div className="sm:col-span-2"><label htmlFor="game" className={labelClass}>Nama game <span className="text-rose-500">*</span></label><select id="game" name="game" value={formData.game} onChange={handleChange} required className={inputClass}><option value="">Pilih game yang sudah ditambahkan</option>{games.map((game) => <option key={game._id} value={game._id}>{game.nama}</option>)}</select>{games.length === 0 && <p className="mt-1 text-xs text-amber-700">Tambahkan game terlebih dahulu dari tab Game.</p>}</div> : <div><label htmlFor="kategori" className={labelClass}>Kategori / experience</label><input id="kategori" name="kategori" value={formData.kategori} onChange={handleChange} maxLength={60} placeholder="Grow a Garden" className={inputClass} /></div>}
+        {formData.jenis === "joki" || formData.jenis === "gift" ? <div className="sm:col-span-2"><label htmlFor="game" className={labelClass}>Nama game <span className="text-rose-500">*</span></label><select id="game" name="game" value={formData.game} onChange={handleChange} required={formData.jenis === "joki" || !isEditing} className={inputClass}><option value="">Pilih game yang sudah ditambahkan</option>{availableGames.map((game) => <option key={game._id} value={game._id}>{game.nama}</option>)}</select>{availableGames.length === 0 && <p className="mt-1 text-xs text-amber-700">Tambahkan game dengan kategori {formData.jenis === "joki" ? "Joki Roblox" : "Gift Item"} terlebih dahulu dari tab Game.</p>}</div> : <div><label htmlFor="kategori" className={labelClass}>Kategori / experience</label><input id="kategori" name="kategori" value={formData.kategori} onChange={handleChange} maxLength={60} placeholder="Grow a Garden" className={inputClass} /></div>}
         <div><label htmlFor="gambar" className={labelClass}>URL gambar</label><input id="gambar" name="gambar" type="url" value={formData.gambar} onChange={handleChange} placeholder="https://..." className={inputClass} /></div>
         <div className="sm:col-span-2"><label htmlFor="deskripsi" className={labelClass}>Deskripsi</label><textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleChange} rows={4} maxLength={1000} placeholder="Jelaskan isi atau syarat produk" className={`${inputClass} resize-y`} /></div>
       </div>
