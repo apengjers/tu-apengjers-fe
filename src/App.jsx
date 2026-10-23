@@ -35,6 +35,7 @@ function App() {
             path="joki-roblox"
             element={<JokiRobloxPage />}
           />
+          <Route path="joki-roblox/:gameSlug" element={<JokiRobloxPage />} />
           <Route
             path="gift-item"
             element={<GiftItemPage />}

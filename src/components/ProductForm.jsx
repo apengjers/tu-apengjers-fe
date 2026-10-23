@@ -2,10 +2,10 @@ import { useState } from "react";
 import api from "../lib/api";
 import { FiX } from "react-icons/fi";
 
-const emptyProduct = { nama: "", jenis: "gift", harga: "", kategori: "", stok: "", gambar: "", deskripsi: "" };
+const emptyProduct = { nama: "", jenis: "gift", harga: "", kategori: "", game: "", stok: "", gambar: "", deskripsi: "" };
 
-export default function ProductForm({ initialData, onSuccess, onCancel }) {
-  const [formData, setFormData] = useState(() => ({ ...emptyProduct, ...(initialData || {}) }));
+export default function ProductForm({ initialData, games = [], onSuccess, onCancel }) {
+  const [formData, setFormData] = useState(() => ({ ...emptyProduct, ...(initialData || {}), game: initialData?.game?._id || initialData?.game || "" }));
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const isEditing = Boolean(initialData?._id);
@@ -23,11 +23,12 @@ export default function ProductForm({ initialData, onSuccess, onCancel }) {
       nama: formData.nama.trim(),
       jenis: formData.jenis,
       harga: Number(formData.harga),
-      kategori: formData.kategori.trim(),
+      kategori: (formData.kategori || "").trim(),
       stok: Number(formData.stok) || 0,
       gambar: formData.gambar.trim(),
       deskripsi: formData.deskripsi.trim(),
     };
+    if (formData.jenis === "joki") payload.game = formData.game;
 
     try {
       if (isEditing) await api.put(`/api/products/${initialData._id}`, payload);
@@ -42,7 +43,6 @@ export default function ProductForm({ initialData, onSuccess, onCancel }) {
 
   const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100";
   const labelClass = "mb-1.5 block text-xs font-bold text-slate-700";
-
   return (
     <form onSubmit={handleSubmit} className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-3xl sm:p-7">
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -51,11 +51,11 @@ export default function ProductForm({ initialData, onSuccess, onCancel }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2"><label htmlFor="nama" className={labelClass}>Nama produk <span className="text-rose-500">*</span></label><input id="nama" name="nama" value={formData.nama} onChange={handleChange} required maxLength={100} placeholder="Contoh: Gift item Grow a Garden" className={inputClass} /></div>
+        <div className="sm:col-span-2"><label htmlFor="nama" className={labelClass}>Nama produk <span className="text-rose-500">*</span></label><input id="nama" name="nama" value={formData.nama} onChange={handleChange} required maxLength={100} placeholder={formData.jenis === "joki" ? "Contoh: Level 1–100" : "Contoh: Gift item Grow a Garden"} className={inputClass} /></div>
         <div><label htmlFor="harga" className={labelClass}>Harga (Rp) <span className="text-rose-500">*</span></label><input id="harga" name="harga" type="number" min="0" step="1" value={formData.harga} onChange={handleChange} required placeholder="25000" className={inputClass} /></div>
         <div><label htmlFor="stok" className={labelClass}>Stok tersedia</label><input id="stok" name="stok" type="number" min="0" step="1" value={formData.stok} onChange={handleChange} placeholder="0" className={inputClass} /></div>
-        <div><label htmlFor="jenis" className={labelClass}>Jenis katalog</label><select id="jenis" name="jenis" value={formData.jenis || "topup"} onChange={handleChange} className={inputClass}><option value="gift">Gift Item Roblox</option><option value="topup">Produk katalog lain</option></select></div>
-        <div><label htmlFor="kategori" className={labelClass}>Kategori / experience</label><input id="kategori" name="kategori" value={formData.kategori} onChange={handleChange} maxLength={60} placeholder="Grow a Garden" className={inputClass} /></div>
+        <div><label htmlFor="jenis" className={labelClass}>Jenis katalog</label><select id="jenis" name="jenis" value={formData.jenis || "topup"} onChange={handleChange} className={inputClass}><option value="gift">Gift Item Roblox</option><option value="joki">Paket Joki Roblox</option><option value="topup">Produk katalog lain</option></select></div>
+        {formData.jenis === "joki" ? <div className="sm:col-span-2"><label htmlFor="game" className={labelClass}>Nama game <span className="text-rose-500">*</span></label><select id="game" name="game" value={formData.game} onChange={handleChange} required className={inputClass}><option value="">Pilih game yang sudah ditambahkan</option>{games.map((game) => <option key={game._id} value={game._id}>{game.nama}</option>)}</select>{games.length === 0 && <p className="mt-1 text-xs text-amber-700">Tambahkan game terlebih dahulu dari tab Game.</p>}</div> : <div><label htmlFor="kategori" className={labelClass}>Kategori / experience</label><input id="kategori" name="kategori" value={formData.kategori} onChange={handleChange} maxLength={60} placeholder="Grow a Garden" className={inputClass} /></div>}
         <div><label htmlFor="gambar" className={labelClass}>URL gambar</label><input id="gambar" name="gambar" type="url" value={formData.gambar} onChange={handleChange} placeholder="https://..." className={inputClass} /></div>
         <div className="sm:col-span-2"><label htmlFor="deskripsi" className={labelClass}>Deskripsi</label><textarea id="deskripsi" name="deskripsi" value={formData.deskripsi} onChange={handleChange} rows={4} maxLength={1000} placeholder="Jelaskan isi atau syarat produk" className={`${inputClass} resize-y`} /></div>
       </div>

@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { FiAlertCircle, FiBox, FiLock, FiLogIn, FiPlus, FiRefreshCw, FiTag } from "react-icons/fi";
+import { FiAlertCircle, FiBox, FiEdit2, FiLock, FiLogIn, FiPlus, FiRefreshCw, FiTag, FiTrash2 } from "react-icons/fi";
 import api from "../lib/api";
 import LoginModal from "../components/LoginModal";
 import ProductForm from "../components/ProductForm";
 import ProductTable from "../components/ProductTable";
+import GameForm from "../components/GameForm";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
+  const [games, setGames] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedGame, setSelectedGame] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isGameFormOpen, setIsGameFormOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("products");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [accessState, setAccessState] = useState("checking");
@@ -55,9 +60,22 @@ export default function AdminProduct() {
     }
   }, []);
 
+  const fetchGames = useCallback(async () => {
+    setErrorMessage("");
+    try {
+      const { data } = await api.get("/api/games");
+      setGames(Array.isArray(data) ? data : []);
+    } catch {
+      setErrorMessage("Data game belum bisa dimuat. Pastikan backend dan koneksi database berjalan.");
+    }
+  }, []);
+
   useEffect(() => {
-    if (accessState === "admin") fetchProducts();
-  }, [accessState, fetchProducts]);
+    if (accessState === "admin") {
+      fetchProducts();
+      fetchGames();
+    }
+  }, [accessState, fetchProducts, fetchGames]);
 
   const handleDelete = async (product) => {
     if (!window.confirm(`Hapus produk “${product.nama}”?`)) return;
@@ -73,6 +91,22 @@ export default function AdminProduct() {
     setIsFormOpen(false);
     setSelectedProduct(null);
     await fetchProducts();
+  };
+
+  const handleGameFormSuccess = async () => {
+    setIsGameFormOpen(false);
+    setSelectedGame(null);
+    await fetchGames();
+  };
+
+  const handleDeleteGame = async (game) => {
+    if (!window.confirm(`Hapus game “${game.nama}”?`)) return;
+    try {
+      await api.delete(`/api/games/${game._id}`);
+      await fetchGames();
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || "Game gagal dihapus. Coba lagi setelah koneksi backend diperiksa.");
+    }
   };
 
   const stockCount = products.reduce((total, product) => total + (Number(product.stok) || 0), 0);
@@ -114,10 +148,10 @@ export default function AdminProduct() {
           </div>
           <button
             type="button"
-            onClick={() => { setSelectedProduct(null); setIsFormOpen(true); }}
+            onClick={() => activeTab === "games" ? (setSelectedGame(null), setIsGameFormOpen(true)) : (setSelectedProduct(null), setIsFormOpen(true))}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-blue-800"
           >
-            <FiPlus aria-hidden="true" className="h-4 w-4" /> Tambah produk
+            <FiPlus aria-hidden="true" className="h-4 w-4" /> {activeTab === "games" ? "Tambah game" : "Tambah produk"}
           </button>
         </header>
 
@@ -139,14 +173,20 @@ export default function AdminProduct() {
           </div>
         )}
 
-        <section className="mt-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mt-7 flex gap-2 border-b border-slate-200" role="tablist" aria-label="Jenis katalog">
+          {[{ id: "products", label: "Produk" }, { id: "games", label: "Game joki" }].map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab.id ? "border-blue-900 text-blue-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{tab.label}</button>)}
+        </div>
+
+        <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <div><h2 className="text-base font-extrabold text-slate-900">Daftar produk</h2><p className="mt-1 text-xs text-slate-500">Data katalog tersimpan melalui backend.</p></div>
-            <button type="button" onClick={fetchProducts} disabled={isLoading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            <div><h2 className="text-base font-extrabold text-slate-900">{activeTab === "games" ? "Daftar game" : "Daftar produk"}</h2><p className="mt-1 text-xs text-slate-500">Data katalog tersimpan melalui backend.</p></div>
+            <button type="button" onClick={activeTab === "games" ? fetchGames : fetchProducts} disabled={isLoading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
               <FiRefreshCw aria-hidden="true" className={isLoading ? "animate-spin" : ""} /> Muat ulang
             </button>
           </div>
-          {isLoading ? (
+          {activeTab === "games" ? (
+            games.length ? <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="w-full min-w-[600px] text-left text-sm"><thead className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500"><tr><th className="px-4 py-3">Game</th><th className="px-4 py-3">Slug rute</th><th className="px-4 py-3 text-right">Aksi</th></tr></thead><tbody className="divide-y divide-slate-100">{games.map((game) => <tr key={game._id}><td className="px-4 py-3"><div className="flex items-center gap-3">{game.gambar ? <img src={game.gambar} alt="" className="h-11 w-11 rounded-xl object-cover" /> : <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><FiBox /></span>}<span className="font-bold text-slate-900">{game.nama}</span></div></td><td className="px-4 py-3 text-xs text-slate-600">/joki-roblox/{game.slug}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => { setSelectedGame(game); setIsGameFormOpen(true); }} aria-label={`Edit ${game.nama}`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-blue-50"><FiEdit2 /></button><button type="button" onClick={() => handleDeleteGame(game)} aria-label={`Hapus ${game.nama}`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-rose-50"><FiTrash2 /></button></div></td></tr>)}</tbody></table></div> : <div className="py-14 text-center text-sm text-slate-500">Belum ada game. Tambahkan game sebelum membuat produk joki.</div>
+          ) : isLoading ? (
             <div className="py-14 text-center text-sm text-slate-500">Memuat katalog…</div>
           ) : (
             <ProductTable products={products} onEdit={(product) => { setSelectedProduct(product); setIsFormOpen(true); }} onDelete={handleDelete} />
@@ -156,9 +196,10 @@ export default function AdminProduct() {
 
       {isFormOpen && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsFormOpen(false); }}>
-          <ProductForm initialData={selectedProduct} onSuccess={handleFormSuccess} onCancel={() => setIsFormOpen(false)} />
+          <ProductForm initialData={selectedProduct} games={games} onSuccess={handleFormSuccess} onCancel={() => setIsFormOpen(false)} />
         </div>
       )}
+      {isGameFormOpen && <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsGameFormOpen(false); }}><GameForm initialData={selectedGame} onSuccess={handleGameFormSuccess} onCancel={() => setIsGameFormOpen(false)} /></div>}
     </>
   );
 }
