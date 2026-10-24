@@ -62,9 +62,9 @@ export default function Carousel3D() {
   
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto py-5 overflow-hidden">
+    <div className="relative mx-auto w-full max-w-6xl overflow-hidden py-2 sm:py-5">
       {/* Carousel Image Wrapper */}
-      <div className="flex justify-center gap-4 items-center perspective-1000 h-[200px] relative">
+      <div className="relative flex h-[clamp(170px,48vw,250px)] items-center justify-center gap-4 perspective-1000">
         {displayImages.map((img, index) => {
           const realIndex = index;
           const position = realIndex - current;
@@ -93,21 +93,24 @@ export default function Carousel3D() {
             />
           );
         })}
+        {/* Panah diposisikan terhadap area gambar, bukan seluruh carousel */}
+        <button
+          type="button"
+          aria-label="Slide sebelumnya"
+          onClick={prevSlide}
+          className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white p-2 text-black shadow sm:left-3"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          aria-label="Slide berikutnya"
+          onClick={nextSlide}
+          className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white p-2 text-black shadow sm:right-3"
+        >
+          ›
+      </button>
       </div>
-
-      {/* Nav Buttons */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white text-black p-2 rounded-full shadow z-20"
-      >
-        ‹
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white text-black p-2 rounded-full shadow z-20"
-      >
-        ›
-      </button>
 
       {/* Dot Indicators */}
       <div className="flex justify-center gap-2 mt-8">

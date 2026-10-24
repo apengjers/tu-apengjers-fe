@@ -1,13 +1,11 @@
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
+import Carousel from "./Carousel";
 import {
-  FiArrowDownRight,
   FiArrowRight,
-  FiCheck,
   FiClock,
   FiGift,
   FiShield,
-  FiTarget,
   FiZap,
 } from "react-icons/fi";
 
@@ -119,7 +117,7 @@ export default function HomeSections() {
           <div className="absolute inset-0 -z-10 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:40px_40px]" />
 
           <div className="grid items-center gap-8 px-6 py-10 sm:px-10 sm:py-14 lg:grid-cols-[1.1fr_.9fr] lg:gap-4 lg:px-14 lg:py-16">
-            <div className="max-w-2xl">
+            <div className="order-2 max-w-2xl lg:order-1">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3.5 py-2 text-xs font-bold tracking-wide text-blue-100">
                 <span className="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_14px_rgba(251,146,60,.9)]" />
                 TOKO LAYANAN ROBLOX
@@ -156,42 +154,8 @@ export default function HomeSections() {
               </p>
             </div>
 
-            <div className="relative mx-auto h-[270px] w-full max-w-[440px] sm:h-[330px]">
-              <div className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-white/[0.04] sm:h-64 sm:w-64" />
-              <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-blue-300/30 sm:h-48 sm:w-48" />
-              <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 rotate-6 place-items-center rounded-[1.8rem] border border-white/20 bg-gradient-to-br from-blue-500 to-indigo-700 shadow-2xl shadow-blue-950/50 sm:h-32 sm:w-32">
-                <FiTarget className="h-11 w-11 text-white sm:h-14 sm:w-14" aria-hidden="true" />
-              </div>
-              <div className="absolute left-0 top-7 max-w-[205px] rounded-2xl border border-white/10 bg-slate-800/90 p-4 shadow-xl backdrop-blur sm:left-2 sm:top-10 sm:max-w-[230px]">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/15 text-orange-300">
-                    <FiZap className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <span>
-                    <span className="block text-[10px] font-extrabold tracking-[0.12em] text-slate-400">LAYANAN</span>
-                    <span className="mt-0.5 block text-sm font-bold text-white">Joki Roblox</span>
-                  </span>
-                </div>
-                <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
-                  <FiCheck aria-hidden="true" /> Pilih target yang kamu mau
-                </div>
-              </div>
-              <div className="absolute bottom-5 right-0 max-w-[205px] rounded-2xl border border-white/10 bg-white p-4 text-slate-900 shadow-2xl sm:bottom-8 sm:right-1 sm:max-w-[230px]">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
-                    <FiGift className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <span>
-                    <span className="block text-[10px] font-extrabold tracking-[0.12em] text-slate-400">KIRIM HADIAH</span>
-                    <span className="mt-0.5 block text-sm font-bold">Gift Item</span>
-                  </span>
-                </div>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-blue-500 to-violet-500" />
-                </div>
-                <p className="mt-2 text-[10px] font-medium text-slate-500">Pilih item untuk temanmu</p>
-              </div>
-              <FiArrowDownRight className="absolute right-7 top-2 h-8 w-8 rotate-12 text-orange-300/80" aria-hidden="true" />
+            <div className="order-1 mx-auto w-full max-w-[520px] lg:order-2">
+              <Carousel />
             </div>
           </div>
         </section>

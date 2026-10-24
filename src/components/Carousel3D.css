@@ -9,8 +9,8 @@
   object-fit: contain;
 
   /* Ukuran responsif */
-  width: clamp(450px, 25vw, 300px);
-  height: clamp(500px, 30vw, 300px);
+  width: clamp(240px, 72vw, 360px);
+  height: clamp(140px, 44vw, 220px);
 
   transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
 }

@@ -124,7 +124,6 @@ export default function OrderFormPage({ orderType }) {
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400">PILIHANMU</p>
                   <h2 className="mt-1 text-base font-extrabold text-slate-900">{selectedTitle}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{selectedOption}</p>
                 </div>
 
                 {isGift ? (
@@ -147,7 +146,7 @@ export default function OrderFormPage({ orderType }) {
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div><label htmlFor="robloxUsername" className="mb-1.5 block text-sm font-bold text-slate-800">Username Roblox <span className="text-red-500">*</span></label><input id="robloxUsername" name="robloxUsername" value={formData.robloxUsername} onChange={updateField} required autoComplete="off" placeholder="Username akun Roblox" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" /><p className="mt-1.5 text-xs text-slate-500">Jangan masukkan password, OTP, atau kode pemulihan.</p></div>
                       <div><label htmlFor="displayName" className="mb-1.5 block text-sm font-bold text-slate-800">Display name <span className="text-red-500">*</span></label><input id="displayName" name="displayName" value={formData.displayName} onChange={updateField} required autoComplete="off" placeholder="Nama tampilan di game" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" /></div>
-                      {[1, 2, 3, 4].map((number) => <div key={number}><label htmlFor={`note${number}`} className="mb-1.5 block text-sm font-bold text-slate-800">Catatan {number}</label><textarea id={`note${number}`} name={`note${number}`} value={formData[`note${number}`]} onChange={updateField} rows={3} maxLength={500} placeholder={`Catatan ${number} untuk admin (opsional)`} className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" /></div>)}
+                      {[1, 2, 3, 4].map((number) => <div key={number}><label htmlFor={`note${number}`} className="mb-1.5 block text-sm font-bold text-slate-800">Catatan {number}</label><input id={`note${number}`} name={`note${number}`} value={formData[`note${number}`]} onChange={updateField} maxLength={200} autoComplete="off" placeholder={`Catatan ${number} untuk admin (opsional)`} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" /></div>)}
                       <div><label htmlFor="whatsapp" className="mb-1.5 block text-sm font-bold text-slate-800">WhatsApp <span className="text-red-500">*</span></label><input id="whatsapp" name="whatsapp" type="tel" value={formData.whatsapp} onChange={updateField} required autoComplete="tel" placeholder="Contoh: +62 812 3456 7890" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" /><p className="mt-1.5 text-xs text-slate-500">Admin menggunakan nomor ini untuk menghubungimu.</p></div>
                     </div>
                   </>
@@ -169,15 +168,15 @@ export default function OrderFormPage({ orderType }) {
 
                 {isGift && <div>
                   <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-slate-800">Catatan tambahan <span className="font-normal text-slate-400">(opsional)</span></label>
-                  <textarea
+                  <input
                     id="notes"
                     name="notes"
                     value={formData.notes}
                     onChange={updateField}
-                    rows={3}
-                    maxLength={500}
+                    maxLength={200}
+                    autoComplete="off"
                     placeholder="Tambahkan informasi yang relevan"
-                    className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>}
 
@@ -305,7 +304,6 @@ export default function OrderFormPage({ orderType }) {
               <div className="mt-4 rounded-2xl bg-slate-50 p-4">
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{isGift ? "GIFT ITEM" : "JOKI ROBLOX"}</p>
                 <p className="mt-2 text-sm font-bold text-slate-900">{selectedTitle}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{selectedOption}</p>
                 <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
                   <span className="text-xs text-slate-500">Harga</span>
                   <span className="text-xs font-extrabold text-slate-800">{isGift ? formatRupiah(selection.item.price) : selection?.package?.price ? formatRupiah(selection.package.price) : "Konfirmasi"}</span>
