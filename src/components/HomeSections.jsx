@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import Carousel from "./Carousel";
+import HotGamesSection from "./HotGamesSection";
 import {
   FiArrowRight,
   FiClock,
@@ -176,6 +177,8 @@ export default function HomeSections() {
             {services.map((service) => <ServiceCard key={service.to} service={service} />)}
           </div>
         </section>
+
+        <HotGamesSection />
 
         <section className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
           <div>

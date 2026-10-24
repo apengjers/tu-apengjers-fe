@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../lib/api";
 import NotFound from "../components/NotFound";
+import QuantitySelector from "../components/QuantitySelector";
 import {
   FiAlertCircle,
   FiArrowLeft,
@@ -29,6 +30,8 @@ export default function GiftItemPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedGiftOption, setSelectedGiftOption] = useState("");
   const [isGiftSelected, setIsGiftSelected] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const detailRef = useRef(null);
 
   useEffect(() => {
     let isActive = true;
@@ -72,7 +75,12 @@ export default function GiftItemPage() {
     setSelectedItem(null);
     setSelectedGiftOption("");
     setIsGiftSelected(false);
+    setQuantity(1);
   }, [gameSlug]);
+
+  useEffect(() => {
+    if (selectedItem) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedItem]);
 
   const selectedGame = giftGames.find((game) => game.slug === gameSlug);
   const visibleItems = useMemo(() => {
@@ -96,6 +104,7 @@ export default function GiftItemPage() {
     setSelectedItem(item);
     setSelectedGiftOption("");
     setIsGiftSelected(false);
+    setQuantity(1);
   };
 
   if (gameSlug && !isLoading && !loadError && !selectedGame) return <NotFound />;
@@ -241,7 +250,7 @@ export default function GiftItemPage() {
         )}
 
         {selectedItem && (
-          <section className="mt-8 scroll-mt-28 rounded-3xl border border-blue-100 bg-blue-50/70 p-5 sm:p-7" aria-labelledby="gift-detail-title">
+          <section ref={detailRef} className="mt-8 scroll-mt-28 rounded-3xl border border-blue-100 bg-blue-50/70 p-5 sm:p-7" aria-labelledby="gift-detail-title">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-blue-700">DETAIL GIFT · {selectedItem.experience}</p>
@@ -296,7 +305,16 @@ export default function GiftItemPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-[10px] leading-4 text-slate-400">Harga katalog ditinjau kembali saat konfirmasi. Stok belum dipesan sampai order diproses.</p>
+                <div className="mt-5">
+                  <QuantitySelector
+                    quantity={quantity}
+                    onChange={setQuantity}
+                    max={selectedItem.stock > 0 ? selectedItem.stock : 1}
+                    helperText={selectedItem.stock > 0 ? `Maksimal ${selectedItem.stock} sesuai stok yang tersedia.` : "Stok sedang habis."}
+                  />
+                </div>
+                <p className="mt-3 text-xs font-extrabold text-slate-800">Total katalog: {formatRupiah(selectedItem.price * quantity)}</p>
+                <p className="mt-3 text-[10px] leading-4 text-slate-400">Harga katalog dikonfirmasi admin. Stok ditahan saat permintaan order dikirim dan dilepas jika order dibatalkan.</p>
                 <button
                   type="button"
                   onClick={() => setIsGiftSelected(true)}
@@ -319,7 +337,7 @@ export default function GiftItemPage() {
                 <button
                   type="button"
                   onClick={() => navigate("/pesan/gift-item", {
-                    state: { item: selectedItem, option: selectedGiftOption },
+                    state: { item: selectedItem, option: selectedGiftOption, quantity },
                   })}
                   className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-900 px-4 py-3 text-xs font-extrabold text-white transition hover:bg-blue-800"
                 >

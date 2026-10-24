@@ -6,6 +6,10 @@ import LoginModal from "../components/LoginModal";
 import ProductForm from "../components/ProductForm";
 import ProductTable from "../components/ProductTable";
 import GameForm from "../components/GameForm";
+import AdminOverview from "../components/AdminOverview";
+import OrdersAdminPanel from "../components/OrdersAdminPanel";
+import CarouselAdminPanel from "../components/CarouselAdminPanel";
+import HotGamesAdminPanel from "../components/HotGamesAdminPanel";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
@@ -14,7 +18,8 @@ export default function AdminProduct() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGameFormOpen, setIsGameFormOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [accessState, setAccessState] = useState("checking");
@@ -138,24 +143,24 @@ export default function AdminProduct() {
 
   return (
     <>
-      <Helmet><title>Panel Penjual | ApengJers</title></Helmet>
+      <Helmet><title>Admin Dashboard | ApengJers</title></Helmet>
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 text-left sm:px-6 sm:pt-10">
         <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-700"><FiTag aria-hidden="true" /> Panel penjual</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Kelola katalog</h1>
-            <p className="mt-2 text-sm text-slate-600">Atur produk dan ketersediaan item yang ditampilkan di tokomu.</p>
+            <p className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-700"><FiTag aria-hidden="true" /> Admin ApengJers</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Dashboard toko</h1>
+            <p className="mt-2 text-sm text-slate-600">Pantau pesanan dan atur tampilan katalog Roblox.</p>
           </div>
-          <button
+          {(activeTab === "products" || activeTab === "games") && <button
             type="button"
             onClick={() => activeTab === "games" ? (setSelectedGame(null), setIsGameFormOpen(true)) : (setSelectedProduct(null), setIsFormOpen(true))}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-blue-800"
           >
             <FiPlus aria-hidden="true" className="h-4 w-4" /> {activeTab === "games" ? "Tambah game" : "Tambah produk"}
-          </button>
+          </button>}
         </header>
 
-        <section aria-label="Ringkasan katalog" className="mt-7 grid gap-4 sm:grid-cols-2">
+        {(activeTab === "products" || activeTab === "games") && <section aria-label="Ringkasan katalog" className="mt-7 grid gap-4 sm:grid-cols-3">
           <article className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-800"><FiBox className="h-5 w-5" aria-hidden="true" /></span>
             <div><p className="text-xs font-semibold text-slate-500">Produk terdaftar</p><p className="mt-1 text-2xl font-black text-slate-900">{products.length}</p></div>
@@ -164,7 +169,11 @@ export default function AdminProduct() {
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><FiTag className="h-5 w-5" aria-hidden="true" /></span>
             <div><p className="text-xs font-semibold text-slate-500">Total stok tersedia</p><p className="mt-1 text-2xl font-black text-slate-900">{stockCount}</p></div>
           </article>
-        </section>
+          <article className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-violet-50 text-violet-700"><FiBox className="h-5 w-5" aria-hidden="true" /></span>
+            <div><p className="text-xs font-semibold text-slate-500">Game terdaftar</p><p className="mt-1 text-2xl font-black text-slate-900">{games.length}</p></div>
+          </article>
+        </section>}
 
         {errorMessage && (
           <div role="alert" className="mt-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
@@ -173,11 +182,15 @@ export default function AdminProduct() {
           </div>
         )}
 
-        <div className="mt-7 flex gap-2 border-b border-slate-200" role="tablist" aria-label="Jenis katalog">
-          {[{ id: "products", label: "Produk" }, { id: "games", label: "Game" }].map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className={`border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab.id ? "border-blue-900 text-blue-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{tab.label}</button>)}
-        </div>
+        <nav className="mt-7 flex gap-1 overflow-x-auto border-b border-slate-200" aria-label="Navigasi admin">
+          {[{ id: "overview", label: "Ringkasan" }, { id: "orders", label: "Pesanan" }, { id: "products", label: "Katalog" }, { id: "games", label: "Game" }, { id: "hotGames", label: "Hot Games" }, { id: "carousel", label: "Carousel" }].map((tab) => <button key={tab.id} type="button" aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => setActiveTab(tab.id)} className={`shrink-0 border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab.id ? "border-blue-900 text-blue-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{tab.label}</button>)}
+        </nav>
 
-        <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        {activeTab === "overview" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-6"><AdminOverview products={products} games={games} onNavigate={(tab, filter = "all") => { setOrderStatusFilter(filter); setActiveTab(tab); }} /></section>
+          : activeTab === "orders" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><OrdersAdminPanel initialStatus={orderStatusFilter} /></section>
+          : activeTab === "carousel" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><CarouselAdminPanel /></section>
+          : activeTab === "hotGames" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><HotGamesAdminPanel /></section>
+          : <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div><h2 className="text-base font-extrabold text-slate-900">{activeTab === "games" ? "Daftar game" : "Daftar produk"}</h2><p className="mt-1 text-xs text-slate-500">Data katalog tersimpan melalui backend.</p></div>
             <button type="button" onClick={activeTab === "games" ? fetchGames : fetchProducts} disabled={isLoading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
@@ -191,7 +204,7 @@ export default function AdminProduct() {
           ) : (
             <ProductTable products={products} onEdit={(product) => { setSelectedProduct(product); setIsFormOpen(true); }} onDelete={handleDelete} />
           )}
-        </section>
+        </section>}
       </main>
 
       {isFormOpen && (
