@@ -1,6 +1,7 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from './components/Layout';
+import ScrollToTop from './components/ScrollToTop';
 import HomeSections from './components/HomeSections';
 import ProductDetail from './pages/ProductDetail';
 import NotFound from './components/NotFound';
@@ -23,6 +24,7 @@ function HomePage() {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -44,6 +46,7 @@ function App() {
           <Route path="pesan/joki-roblox" element={<OrderFormPage orderType="joki" />} />
           <Route path="pesan/gift-item" element={<OrderFormPage orderType="gift" />} />
           <Route path="cara-order" element={<CaraOrderPage />} />
+          <Route path="admin" element={<AdminProduct />} />
           <Route path="*" element={<NotFound />} />
           <Route path="cek-transaksi" element={<CekTransaksi />} />
           <Route path="adminproduct" element={<AdminProduct />} />
