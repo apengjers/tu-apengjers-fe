@@ -257,6 +257,49 @@
 .chat-category-btn:hover { border-color: #7aabdf; background: #e6f0fb; transform: translateY(-1px); }
 .chat-lock-badge         { font-size: 10px; margin-left: 3px; opacity: .7; }
 
+/* ── Nav links (tombol ke halaman produk) ────────────────────────────────── */
+.chat-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #d4e4f7;
+  border-radius: 12px;
+  background: #f4f9ff;
+  animation: chat-panel-in 200ms ease-out;
+}
+.chat-nav-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a6fa8;
+}
+.chat-nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chat-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: 1.5px solid #7aabdf;
+  border-radius: 10px;
+  color: #1a4a8a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms, transform 150ms, border-color 150ms;
+}
+.chat-nav-btn:hover {
+  background: #e6f0fb;
+  border-color: #4a8fd4;
+  transform: translateY(-1px);
+}
+
 /* ── Quick replies ───────────────────────────────────────────────────────── */
 .chat-quick-replies {
   display: flex;

@@ -1,20 +1,80 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { FiMessageCircle, FiSend, FiX, FiCopy, FiCheck } from "react-icons/fi";
+import { FiMessageCircle, FiSend, FiX, FiCopy, FiCheck, FiArrowRight } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import LoginModal from "./LoginModal";
 import "./ChatWidget.css";
 
-// ─── Konstanta ────────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-  { id: "joki-item",   label: "🎮 Joki & Item",    hint: "jasa joki dan item/gift game" },
-  { id: "cara-pesan",  label: "📖 Cara Pesan",     hint: null, static: true },
-  { id: "pembayaran",  label: "💳 Pembayaran",     hint: null, static: true },
-  { id: "faq",         label: "❓ FAQ",             hint: null, static: true },
-  { id: "order",       label: "📦 Cek Pesanan",    hint: null, requiresAuth: true },
+// ─── Navigasi intent ──────────────────────────────────────────────────────────
+// Keyword → tombol halaman yang ditampilkan setelah LLM jawab
+const NAV_INTENTS = [
+  {
+    keywords: [
+      "pesan joki", "order joki", "beli joki", "cara pesan joki",
+      "mau joki", "ingin joki", "daftar joki", "joki roblox",
+    ],
+    links: [
+      { label: "Lihat Joki Roblox", to: "/joki-roblox" },
+      { label: "Pesan Joki Sekarang", to: "/pesan/joki-roblox" },
+    ],
+  },
+  {
+    keywords: [
+      "pesan item", "beli item", "order item", "mau item", "ingin item",
+      "pesan gift", "beli gift", "order gift", "gift item", "cara pesan item",
+      "cara beli item", "cara order item",
+    ],
+    links: [
+      { label: "Lihat Gift Item", to: "/gift-item" },
+      { label: "Pesan Item Sekarang", to: "/pesan/gift-item" },
+    ],
+  },
+  {
+    keywords: [
+      "cara pesan", "cara order", "gimana pesan", "gimana cara", "gimana order",
+      "bagaimana cara", "bagaimana pesan", "bagaimana order", "langkah pesan",
+      "tutorial pesan", "mau beli", "mau order", "ingin beli", "ingin order",
+      "cara beli", "cara daftar", "cara transaksi",
+    ],
+    links: [
+      { label: "Panduan Cara Order", to: "/cara-order" },
+      { label: "Joki Roblox", to: "/joki-roblox" },
+      { label: "Gift Item", to: "/gift-item" },
+    ],
+  },
+  {
+    keywords: [
+      "cek transaksi", "cek pesanan", "status pesanan", "status order",
+      "lihat pesanan", "lacak pesanan", "nomor order",
+      "pesanan aku", "pesanan saya", "pesanan ku", "order aku", "order saya",
+      "sudah masuk", "sudah diterima", "sudah diproses", "pesanan masuk",
+      "transaksi saya", "transaksi aku", "history pesanan", "riwayat pesanan",
+    ],
+    links: [
+      { label: "Cek Transaksi", to: "/cek-transaksi" },
+    ],
+  },
 ];
 
+function detectNavIntent(text) {
+  const lower = text.toLowerCase();
+  for (const intent of NAV_INTENTS) {
+    if (intent.keywords.some((kw) => lower.includes(kw))) return intent.links;
+  }
+  return null;
+}
+
+// ─── Kategori ─────────────────────────────────────────────────────────────────
+const CATEGORIES = [
+  { id: "joki-item",  label: "🎮 Joki & Item",  hint: "jasa joki dan item/gift game" },
+  { id: "cara-pesan", label: "📖 Cara Pesan",   hint: null, static: true },
+  { id: "pembayaran", label: "💳 Pembayaran",   hint: null, static: true },
+  { id: "faq",        label: "❓ FAQ",           hint: null, static: true },
+  { id: "order",      label: "📦 Cek Pesanan",  hint: null, requiresAuth: true },
+];
+
+// ─── Konten statis ────────────────────────────────────────────────────────────
 const STATIC_CONTENT = {
   "cara-pesan": `**Cara Pesan di ApengJers**
 
@@ -22,7 +82,7 @@ const STATIC_CONTENT = {
 Buka halaman Joki Roblox atau Gift Item, lalu pilih paket yang sesuai.
 
 **02 · Isi detail**
-Masukkan username Roblox penerima dan detail target yang diminta. Jangan pernah kirim password, OTP, cookie, atau kode pemulihan akun.
+Masukkan username Roblox penerima dan detail target yang diminta. Jangan kirim password, OTP, cookie, atau kode pemulihan akun.
 
 **03 · Konfirmasi & bayar**
 Harga dan metode pembayaran dikonfirmasi penjual sebelum transaksi diproses.
@@ -35,7 +95,7 @@ Penjual akan memberi konfirmasi dan update progres lewat kanal kontak yang terse
 
   "pembayaran": `**Metode Pembayaran ApengJers**
 
-Saat ini pembayaran diproses melalui **Midtrans** dengan pilihan:
+Pembayaran diproses melalui **Midtrans** dengan pilihan:
 
 - 💰 Transfer Bank (BCA, BNI, BRI, Mandiri)
 - 📱 E-Wallet (GoPay, OVO, DANA, ShopeePay)
@@ -46,41 +106,59 @@ Saat ini pembayaran diproses melalui **Midtrans** dengan pilihan:
 1. Pilih produk dan isi form order
 2. Pilih metode pembayaran saat checkout
 3. Selesaikan pembayaran sesuai instruksi
-4. Status pesanan akan diperbarui otomatis
+4. Status pesanan diperbarui otomatis
 
 ---
-⚠️ Jangan transfer ke rekening pribadi. Semua pembayaran melalui sistem resmi ApengJers.`,
+⚠️ Jangan transfer ke rekening pribadi. Semua pembayaran lewat sistem resmi ApengJers.`,
 
   "faq": `**Pertanyaan yang Sering Ditanyakan**
 
-**❓ Berapa lama proses joki?**
+**Berapa lama proses joki?**
 Tergantung paket yang dipilih. Estimasi tertera di halaman produk.
 
-**❓ Apakah akun Roblox saya aman?**
-Ya. Penjual tidak memerlukan password akun. Proses dilakukan dari akun penjual sendiri.
+**Apakah akun Roblox saya aman?**
+Ya. Penjual tidak memerlukan password. Proses dilakukan dari akun penjual sendiri.
 
-**❓ Ada garansi tidak?**
+**Ada garansi tidak?**
 Setiap pesanan memiliki garansi sesuai deskripsi produk yang dipilih.
 
-**❓ Bagaimana kalau pesanan belum selesai?**
-Hubungi penjual lewat kanal kontak yang tersedia dengan menyertakan nomor pesananmu.
+**Bagaimana kalau pesanan belum selesai?**
+Hubungi penjual lewat kanal kontak yang tersedia dengan nomor pesananmu.
 
-**❓ Bisa refund?**
-Kebijakan refund berlaku jika layanan tidak terpenuhi sesuai deskripsi. Hubungi admin.
+**Bisa refund?**
+Kebijakan refund berlaku jika layanan tidak terpenuhi. Hubungi admin.
 
-**❓ Apakah perlu buat akun untuk pesan?**
+**Perlu buat akun untuk pesan?**
 Tidak wajib, tapi disarankan agar kamu bisa melacak pesanan lebih mudah.`,
 };
 
-// Quick reply per kategori — muncul setelah LLM menjawab
-const QUICK_REPLIES = {
-  "joki-item": ["Lihat daftar harga", "Ada stok kosong?", "Cara pesan joki"],
-  "cara-pesan": ["Info pembayaran", "Cek pesanan saya", "Berapa lama proses?"],
-  "pembayaran": ["Cara pesan", "Cek pesanan saya", "Ada promo?"],
-  "faq": ["Cara pesan", "Info pembayaran", "Lihat produk"],
+// Nav links untuk kategori statis
+const STATIC_NAV = {
+  "cara-pesan": [
+    { label: "Joki Roblox", to: "/joki-roblox" },
+    { label: "Gift Item", to: "/gift-item" },
+    { label: "Panduan Lengkap", to: "/cara-order" },
+  ],
+  "pembayaran": [
+    { label: "Pesan Joki", to: "/pesan/joki-roblox" },
+    { label: "Pesan Item", to: "/pesan/gift-item" },
+  ],
+  "faq": [
+    { label: "Cara Order", to: "/cara-order" },
+    { label: "Joki Roblox", to: "/joki-roblox" },
+    { label: "Gift Item", to: "/gift-item" },
+  ],
 };
 
-// Typing label per konteks
+// Quick reply per kategori
+const QUICK_REPLIES = {
+  "joki-item":  ["Lihat daftar harga", "Ada stok kosong?", "Cara pesan joki"],
+  "cara-pesan": ["Info pembayaran", "Cek pesanan saya", "Berapa lama proses?"],
+  "pembayaran": ["Cara pesan", "Cek pesanan saya"],
+  "faq":        ["Cara pesan", "Info pembayaran"],
+};
+
+// Typing label
 const TYPING_LABELS = {
   "joki-item":  "Mencari info produk...",
   "cara-pesan": "Memuat panduan...",
@@ -90,9 +168,19 @@ const TYPING_LABELS = {
   default:      "Sedang mengetik...",
 };
 
-// ─── Sub-komponen bubble ──────────────────────────────────────────────────────
+// ─── Welcome message ──────────────────────────────────────────────────────────
+function buildWelcomeMsg(user) {
+  return {
+    id: "welcome",
+    role: "assistant",
+    text: user
+      ? `Halo, **${user.displayName || user.email}**! 👋 Ada yang bisa saya bantu hari ini?\nPilih topik di bawah atau langsung ketik pertanyaanmu.`
+      : "Halo! Saya asisten ApengJers 👋\nPilih topik di bawah atau langsung ketik pertanyaanmu.",
+  };
+}
 
-function ChatBubble({ msg, isLast }) {
+// ─── Sub-komponen bubble ──────────────────────────────────────────────────────
+function ChatBubble({ msg }) {
   const [copied, setCopied] = useState(false);
   const isAssistant = msg.role === "assistant";
 
@@ -126,59 +214,56 @@ function ChatBubble({ msg, isLast }) {
 }
 
 // ─── Komponen utama ───────────────────────────────────────────────────────────
-
 export default function ChatWidget() {
+  // Init langsung dengan welcome message default — tidak pernah kosong
+  const [messages,       setMessages]       = useState([buildWelcomeMsg(null)]);
   const [isOpen,         setIsOpen]         = useState(false);
-  const [messages,       setMessages]       = useState([]);
   const [input,          setInput]          = useState("");
   const [isTyping,       setIsTyping]       = useState(false);
   const [typingLabel,    setTypingLabel]    = useState("Sedang mengetik...");
   const [activeCategory, setActiveCategory] = useState(null);
-  const [currentUser,    setCurrentUser]    = useState(null);
+  const [currentUser,    setCurrentUser]    = useState(null); // null=belum cek, false=tidak login
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showQuickReply, setShowQuickReply] = useState(false);
+  const [navLinks,       setNavLinks]       = useState(null);
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
+  const navigate       = useNavigate();
 
   // ── Cek login ─────────────────────────────────────────────────────────────
   const fetchCurrentUser = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token) { setCurrentUser(false); return; }
+    if (!token) {
+      setCurrentUser(false);
+      return false;
+    }
     try {
       const { data } = await api.get("/auth/me");
       setCurrentUser(data);
+      return data;
     } catch {
       setCurrentUser(false);
+      return false;
     }
   }, []);
 
-  // ── Welcome message (dengan nama user kalau login) ────────────────────────
-  const buildWelcomeMsg = useCallback((user) => ({
-    id: "welcome",
-    role: "assistant",
-    text: user
-      ? `Halo, **${user.displayName || user.email}**! 👋 Ada yang bisa saya bantu hari ini?\nPilih topik di bawah atau langsung ketik pertanyaanmu.`
-      : "Halo! Saya asisten ApengJers 👋\nPilih topik di bawah atau langsung ketik pertanyaanmu.",
-  }), []);
-
+  // Cek login saat widget pertama dibuka, update welcome message
   useEffect(() => {
-    if (isOpen) {
-      fetchCurrentUser().then(() => {});
-    }
-  }, [isOpen, fetchCurrentUser]);
-
-  // Update welcome message saat user terdeteksi
-  useEffect(() => {
-    if (currentUser !== null) {
+    if (!isOpen) return;
+    fetchCurrentUser().then((user) => {
+      // Update welcome message hanya jika masih di welcome screen
       setMessages((prev) => {
-        if (prev.length === 0 || prev[0].id === "welcome") {
-          return [buildWelcomeMsg(currentUser), ...prev.filter((m) => m.id !== "welcome")];
+        const isWelcomeOnly = prev.length === 1 && prev[0].id === "welcome";
+        if (isWelcomeOnly) return [buildWelcomeMsg(user || null)];
+        // Kalau sudah ada percakapan, update welcome message di posisi pertama saja
+        if (prev[0]?.id === "welcome") {
+          return [buildWelcomeMsg(user || null), ...prev.slice(1)];
         }
         return prev;
       });
-    }
-  }, [currentUser, buildWelcomeMsg]);
+    });
+  }, [isOpen, fetchCurrentUser]);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -198,35 +283,37 @@ export default function ChatWidget() {
   const pushMsg = (role, text) =>
     setMessages((prev) => [...prev, { id: `${Date.now()}-${role}`, role, text }]);
 
-  // ── Reset ─────────────────────────────────────────────────────────────────
+  // ── Reset ke welcome ──────────────────────────────────────────────────────
   const handleReset = () => {
-    setMessages([buildWelcomeMsg(currentUser)]);
+    setMessages([buildWelcomeMsg(currentUser || null)]);
     setActiveCategory(null);
     setInput("");
     setShowQuickReply(false);
+    setNavLinks(null);
   };
 
   // ── Klik kategori ─────────────────────────────────────────────────────────
   const handleCategory = async (cat) => {
     setShowQuickReply(false);
+    setNavLinks(null);
 
-    // Statis (cara pesan, pembayaran, faq)
+    // Statis: cara pesan, pembayaran, faq
     if (cat.static) {
       setActiveCategory(cat);
       setTypingLabel(TYPING_LABELS[cat.id] || TYPING_LABELS.default);
       setIsTyping(true);
-      await new Promise((r) => setTimeout(r, 400)); // micro-delay biar natural
+      await new Promise((r) => setTimeout(r, 350));
       setIsTyping(false);
       pushMsg("assistant", STATIC_CONTENT[cat.id]);
       setShowQuickReply(true);
+      if (STATIC_NAV[cat.id]) setNavLinks(STATIC_NAV[cat.id]);
       return;
     }
 
     // Cek pesanan — wajib login
     if (cat.requiresAuth) {
-      await fetchCurrentUser();
-      const token = localStorage.getItem("token");
-      if (!token) { setShowLoginModal(true); return; }
+      const user = await fetchCurrentUser();
+      if (!user) { setShowLoginModal(true); return; }
 
       setActiveCategory(cat);
       setTypingLabel(TYPING_LABELS.order);
@@ -261,12 +348,16 @@ export default function ChatWidget() {
     if (!text || isTyping) return;
 
     setShowQuickReply(false);
+    setNavLinks(null);
+
     const userMsg = { id: `${Date.now()}-user`, role: "user", text };
     const nextMsgs = [...messages, userMsg];
     setMessages(nextMsgs);
     setInput("");
     setTypingLabel(TYPING_LABELS[activeCategory?.id] || TYPING_LABELS.default);
     setIsTyping(true);
+
+    const detectedLinks = detectNavIntent(text);
 
     try {
       const history = nextMsgs
@@ -282,6 +373,7 @@ export default function ChatWidget() {
 
       pushMsg("assistant", data.reply || "Maaf, tidak ada respons.");
       setShowQuickReply(true);
+      if (detectedLinks) setNavLinks(detectedLinks);
     } catch (err) {
       pushMsg("assistant", err.response?.data?.error || "Gagal terhubung. Coba lagi.");
     } finally {
@@ -291,7 +383,14 @@ export default function ChatWidget() {
 
   const handleLoginClose = () => {
     setShowLoginModal(false);
-    fetchCurrentUser();
+    fetchCurrentUser().then((user) => {
+      if (user) {
+        setMessages((prev) => {
+          if (prev[0]?.id === "welcome") return [buildWelcomeMsg(user), ...prev.slice(1)];
+          return prev;
+        });
+      }
+    });
   };
 
   const showCategories = messages.length <= 1 && !activeCategory;
@@ -308,9 +407,7 @@ export default function ChatWidget() {
             {/* Header */}
             <header className="chat-header">
               <div className="chat-header-brand">
-                <div className="chat-avatar" aria-hidden="true">
-                  <FiMessageCircle />
-                </div>
+                <div className="chat-avatar" aria-hidden="true"><FiMessageCircle /></div>
                 <div>
                   <h2>ApengJers Support</h2>
                   <p>
@@ -322,7 +419,7 @@ export default function ChatWidget() {
                 </div>
               </div>
               <div className="chat-header-actions">
-                {activeCategory && (
+                {(activeCategory || messages.length > 1) && (
                   <button className="chat-reset" type="button" onClick={handleReset}
                     title="Menu utama" aria-label="Kembali ke menu utama">↩
                   </button>
@@ -342,8 +439,8 @@ export default function ChatWidget() {
             <div className="chat-messages" aria-live="polite" aria-relevant="additions text">
               <div className="chat-time">BANTUAN APENGJERS</div>
 
-              {messages.map((msg, i) => (
-                <ChatBubble key={msg.id} msg={msg} isLast={i === messages.length - 1} />
+              {messages.map((msg) => (
+                <ChatBubble key={msg.id} msg={msg} />
               ))}
 
               {/* Typing indicator */}
@@ -363,18 +460,39 @@ export default function ChatWidget() {
                     <button key={cat.id} type="button" className="chat-category-btn"
                       onClick={() => handleCategory(cat)}>
                       {cat.label}
-                      {cat.requiresAuth && <span className="chat-lock-badge" title="Perlu login"> 🔒</span>}
+                      {cat.requiresAuth && (
+                        <span className="chat-lock-badge" title="Perlu login"> 🔒</span>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Quick replies setelah LLM jawab */}
+              {/* Quick replies */}
               {quickReplies.length > 0 && (
                 <div className="chat-quick-replies" aria-label="Pertanyaan lanjutan">
                   {quickReplies.map((qr) => (
                     <button key={qr} type="button" onClick={() => sendMessage(qr)}>{qr}</button>
                   ))}
+                </div>
+              )}
+
+              {/* Tombol navigasi halaman */}
+              {navLinks && navLinks.length > 0 && (
+                <div className="chat-nav-links" aria-label="Halaman terkait">
+                  <p className="chat-nav-label">🔗 Langsung ke halaman:</p>
+                  <div className="chat-nav-buttons">
+                    {navLinks.map((link) => (
+                      <button
+                        key={link.to}
+                        type="button"
+                        className="chat-nav-btn"
+                        onClick={() => { setIsOpen(false); navigate(link.to); }}
+                      >
+                        {link.label} <FiArrowRight size={12} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
