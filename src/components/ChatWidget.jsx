@@ -379,11 +379,11 @@ export default function ChatWidget() {
             navigate("/pesan/joki-roblox", {
               state: {
                 experience: { name: "Joki Roblox", id: "chatbot" },
-                package: { name: "Dari Chatbot", detail: extracted.targetDetails || "" },
+                package: { name: "Pilihan dari chatbot", detail: extracted.targetDetails || "Sesuai permintaan" },
                 prefill: {
-                  robloxUsername:    extracted.robloxUsername    || "",
-                  targetDetails:     extracted.targetDetails     || "",
-                  notes:             extracted.notes             || "",
+                  robloxUsername: extracted.robloxUsername || "",
+                  targetDetails:  extracted.targetDetails  || "",
+                  notes:          extracted.notes          || "",
                 },
               },
             });
@@ -395,7 +395,7 @@ export default function ChatWidget() {
             navigate("/pesan/gift-item", {
               state: {
                 item: { itemName: "Gift Item", price: 0, id: "chatbot" },
-                option: extracted.targetDetails || "",
+                option: extracted.targetDetails || "Sesuai permintaan",
                 prefill: {
                   recipientUsername: extracted.recipientUsername || "",
                   notes:             extracted.notes             || "",

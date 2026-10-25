@@ -52,6 +52,7 @@ export default function OrderFormPage({ orderType }) {
     : `${selection?.experience?.name} · ${selection?.package?.name}`;
   const selectedOption = isGift ? selection?.option : selection?.package?.detail;
   const catalogPath = isGift ? "/gift-item" : "/joki-roblox";
+  const fromChatbot = selection?.experience?.id === "chatbot" || selection?.item?.id === "chatbot";
 
   const updateField = (event) => {
     const { name, value, checked, type } = event.target;
@@ -116,13 +117,18 @@ export default function OrderFormPage({ orderType }) {
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             {currentStep === 1 ? (
               <form onSubmit={handleReview} className="space-y-5">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400">PILIHANMU</p>
-                  <h2 className="mt-1 text-base font-extrabold text-slate-900">{selectedTitle}</h2>
-                  <p className="mt-1 text-xs text-slate-500">{selectedOption}</p>
-                </div>
-
-                {isGift ? (
+                {fromChatbot ? (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-500">DARI ASISTEN AI</p>
+                    <p className="mt-1 text-sm text-blue-900">Detail berikut sudah diisi otomatis. Periksa dan sesuaikan sebelum lanjut.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-slate-50 p-4">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400">PILIHANMU</p>
+                    <h2 className="mt-1 text-base font-extrabold text-slate-900">{selectedTitle}</h2>
+                    <p className="mt-1 text-xs text-slate-500">{selectedOption}</p>
+                  </div>
+                )}
                   <div>
                     <label htmlFor="recipientUsername" className="mb-1.5 block text-sm font-bold text-slate-800">Username Roblox penerima <span className="text-red-500">*</span></label>
                     <input
