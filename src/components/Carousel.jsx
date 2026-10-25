@@ -1,138 +1,74 @@
-import { useState, useEffect, useRef } from 'react';
-import './Carousel3D.css';
+import { useEffect, useState } from "react";
+import api from "../lib/api";
+import "./Carousel3D.css";
 
-const images = [
-  "/contohuni.jpg",
-  "/contohupo.jpg",
-  "/contohuni.jpg",
-  "/contohupo.jpg",
+const fallbackSlides = [
+  { imageUrl: "/contohuni.jpg", title: "Joki Roblox", description: "Bantuan progress untuk experience pilihanmu.", href: "/joki-roblox" },
+  { imageUrl: "/contohupo.jpg", title: "Gift Item", description: "Cari item Roblox untuk dikirim ke teman.", href: "/gift-item" },
+  { imageUrl: "/contohuni.jpg", title: "Pilih layanan", description: "Temukan layanan yang sesuai kebutuhanmu.", href: "/cara-order" },
 ];
 
-export default function Carousel3D() {
-  const [current, setCurrent] = useState(1); // Start from index 1 (karena displayImages offset)
-  const intervalRef = useRef(null);
-  const [isResetting, setIsResetting] = useState(false);
-  const [prevIndex, setPrevIndex] = useState(0);
-
-
-  const displayImages = [images[images.length - 1], ...images, images[0]]; // [last, ...images, first]
-  const len = displayImages.length;
+export default function Carousel() {
+  const [slides, setSlides] = useState(fallbackSlides);
+  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    startAutoSlide();
-    return () => clearInterval(intervalRef.current);
-  }, [current]);
-
-  const startAutoSlide = () => {
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      nextSlide();
-    }, 5000);
-  };
-
-  const nextSlide = () => {
-    setCurrent((prev) => prev + 1);
-  };
-
-  const prevSlide = () => {
-    setCurrent((prev) => prev - 1);
-  };
+    let isActive = true;
+    api.get("/api/carousel")
+      .then(({ data }) => {
+        if (isActive && Array.isArray(data)) {
+          setSlides(data);
+          setCurrent(0);
+        }
+      })
+      .catch(() => {});
+    return () => { isActive = false; };
+  }, []);
 
   useEffect(() => {
-    if (current === len - 1) {
-      setTimeout(() => {
-        setIsResetting(true);
-        setCurrent(1);
-        setTimeout(() => setIsResetting(false), 50);
-      }, 600); // waktu sama kayak transition di CSS
-    } else if (current === 0) {
-      setTimeout(() => {
-        setIsResetting(true);
-        setCurrent(len - 2);
-        setTimeout(() => setIsResetting(false), 50);
-      }, 600);
-    }
-  }, [current]);
+    if (slides.length < 2) return undefined;
+    const interval = window.setInterval(() => setCurrent((index) => (index + 1) % slides.length), 5000);
+    return () => window.clearInterval(interval);
+  }, [slides.length]);
 
-  const handleManualSlide = (newIndex) => {
-    setPrevIndex((current - 1 + images.length) % images.length); // simpen yang lama
-    setCurrent(newIndex + 1);
-    startAutoSlide();
-  };
-  
-
+  const move = (direction) => setCurrent((index) => (index + direction + slides.length) % slides.length);
+  if (!slides.length) return <div className="grid min-h-52 place-items-center rounded-3xl border border-white/10 bg-white/[0.05] p-6 text-center text-sm text-blue-100">Carousel belum diatur admin.</div>;
   return (
-    <div className="relative w-full max-w-6xl mx-auto py-5 overflow-hidden">
-      {/* Carousel Image Wrapper */}
-      <div className="flex justify-center gap-4 items-center perspective-1000 h-[200px] relative">
-        {displayImages.map((img, index) => {
-          const realIndex = index;
-          const position = realIndex - current;
-          let scale = 0.8;
-          let translateX = `${position * 350}px`;
-          let rotateY = `${position * -45}deg`;
-          let zIndex = -Math.abs(position);
-
-          if (position === 0) {
-            scale = 1;
-            zIndex = 10;
-          }
+    <div className="carousel-shell mx-auto w-full max-w-[520px] py-2 sm:py-4">
+      <div className="carousel-stage" aria-roledescription="carousel" aria-label="Sorotan ApengJers">
+        {slides.map((slide, index) => {
+          const rawPosition = index - current;
+          const position = rawPosition > slides.length / 2
+            ? rawPosition - slides.length
+            : rawPosition < -slides.length / 2
+              ? rawPosition + slides.length
+              : rawPosition;
+          const isActive = index === current;
 
           return (
-            <img
-              key={index}
-              src={img}
-              alt={`Slide ${index}`}
-              className="carousel-image"
+            <div
+              key={slide._id || `${slide.title}-${index}`}
+              className="carousel-slide"
+              aria-hidden={!isActive}
               style={{
-                transform: `translateX(${translateX}) scale(${scale}) rotateY(${rotateY})`,
-                zIndex,
-                opacity: Math.abs(position) > 1 ? 0 : position === 0 ? 1 : 0.5,
-                transition: isResetting ? 'none' : undefined,
+                transform: `translate(-50%, -50%) translateX(${position * 72}%) scale(${isActive ? 1 : 0.78}) rotateY(${position * -24}deg)`,
+                zIndex: isActive ? 3 : Math.max(0, 2 - Math.abs(position)),
+                opacity: Math.abs(position) > 1 ? 0 : isActive ? 1 : 0.58,
+                pointerEvents: isActive ? "auto" : "none",
               }}
-            />
+            >
+              <img src={slide.imageUrl} alt={isActive ? slide.title : ""} className="carousel-image" />
+            </div>
           );
         })}
+        {slides.length > 1 && <>
+          <button type="button" aria-label="Slide sebelumnya" onClick={() => move(-1)} className="carousel-arrow carousel-arrow-prev">‹</button>
+          <button type="button" aria-label="Slide berikutnya" onClick={() => move(1)} className="carousel-arrow carousel-arrow-next">›</button>
+        </>}
       </div>
-
-      {/* Nav Buttons */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white text-black p-2 rounded-full shadow z-20"
-      >
-        ‹
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white text-black p-2 rounded-full shadow z-20"
-      >
-        ›
-      </button>
-
-      {/* Dot Indicators */}
-      <div className="flex justify-center gap-2 mt-8">
-      {images.map((_, index) => {
-        const realIndex = (current - 1 + images.length) % images.length;
-        const distance = Math.abs(index - prevIndex);
-        const isActive = index === realIndex;
-
-        // Delay berdasarkan jarak
-        const delay = distance * 75; // ms
-
-        return (
-          <button
-            key={index}
-            onClick={() => handleManualSlide(index)}
-            className={`w-3 h-3 rounded-full transform transition-transform duration-300 ease-out
-              ${isActive ? 'bg-orange-500 scale-125' : 'bg-gray-400 scale-100'}
-            `}
-            style={{
-              transitionDelay: `${delay}ms`,
-            }}
-          />
-        );
-      })}
-      </div>
+      {slides.length > 1 && <div className="mt-3 flex justify-center gap-2" aria-label="Pilih slide">
+        {slides.map((slide, index) => <button key={slide._id || `${slide.title}-dot-${index}`} type="button" aria-label={`Tampilkan slide ${index + 1}: ${slide.title}`} aria-current={current === index ? "true" : undefined} onClick={() => setCurrent(index)} className={`h-2.5 w-2.5 rounded-full transition ${current === index ? "scale-125 bg-orange-500" : "bg-slate-300 hover:bg-slate-400"}`} />)}
+      </div>}
     </div>
   );
 }

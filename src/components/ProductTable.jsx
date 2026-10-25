@@ -28,8 +28,8 @@ export default function ProductTable({ products, onEdit, onDelete }) {
                   <div className="min-w-0"><p className="truncate font-bold text-slate-900">{product.nama || "Produk tanpa nama"}</p><p className="mt-0.5 max-w-xs truncate text-xs text-slate-500">{product.deskripsi || "Tanpa deskripsi"}</p></div>
                 </div>
               </td>
-              <td className="px-4 py-3 text-xs font-semibold text-slate-600">{product.jenis === "gift" ? "Gift Item" : "Produk lain"}</td>
-              <td className="px-4 py-3 text-xs text-slate-600">{product.kategori || "—"}</td>
+              <td className="px-4 py-3 text-xs font-semibold text-slate-600">{product.jenis === "gift" ? "Gift Item" : product.jenis === "joki" ? "Paket Joki" : "Produk lain"}</td>
+              <td className="px-4 py-3 text-xs text-slate-600">{product.jenis === "joki" ? product.game?.nama || "Game belum dipilih" : product.kategori || "—"}</td>
               <td className="px-4 py-3 text-xs font-bold text-slate-800">{formatRupiah(product.harga)}</td>
               <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${Number(product.stok) > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{Number(product.stok) || 0} tersedia</span></td>
               <td className="px-4 py-3">
