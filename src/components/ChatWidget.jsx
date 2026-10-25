@@ -65,6 +65,17 @@ function detectNavIntent(text) {
   return null;
 }
 
+// Keyword yang menandakan user mau langsung order
+const ORDER_TRIGGER_KEYWORDS = [
+  "orderin", "order in", "pesenin", "langsung order", "langsung pesan",
+  "mau order", "mau pesan", "ingin order", "ingin pesan",
+  "tolong order", "tolong pesan", "bikinin order", "buatin order",
+];
+
+function detectOrderTrigger(text) {
+  const lower = text.toLowerCase();
+  return ORDER_TRIGGER_KEYWORDS.some((kw) => lower.includes(kw));
+}
 // ─── Kategori ─────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: "joki-item",  label: "🎮 Joki & Item",  hint: "jasa joki dan item/gift game" },
@@ -349,6 +360,69 @@ export default function ChatWidget() {
 
     setShowQuickReply(false);
     setNavLinks(null);
+
+    // Cek apakah user mau langsung order
+    if (detectOrderTrigger(text)) {
+      const userMsg = { id: `${Date.now()}-user`, role: "user", text };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setTypingLabel("Memproses permintaan order...");
+      setIsTyping(true);
+      try {
+        const { data } = await api.post("/api/chat/extract-order", { message: text });
+        const extracted = data.extracted;
+
+        if (extracted?.orderType === "joki") {
+          pushMsg("assistant", "Oke! Saya akan arahkan kamu ke form order Joki Roblox dengan detail yang sudah diisi otomatis. 🎮");
+          setTimeout(() => {
+            setIsOpen(false);
+            navigate("/pesan/joki-roblox", {
+              state: {
+                experience: { name: "Joki Roblox", id: "chatbot" },
+                package: { name: "Dari Chatbot", detail: extracted.targetDetails || "" },
+                prefill: {
+                  robloxUsername:    extracted.robloxUsername    || "",
+                  targetDetails:     extracted.targetDetails     || "",
+                  notes:             extracted.notes             || "",
+                },
+              },
+            });
+          }, 1200);
+        } else if (extracted?.orderType === "gift") {
+          pushMsg("assistant", "Oke! Saya akan arahkan kamu ke form order Gift Item dengan detail yang sudah diisi otomatis. 🎁");
+          setTimeout(() => {
+            setIsOpen(false);
+            navigate("/pesan/gift-item", {
+              state: {
+                item: { itemName: "Gift Item", price: 0, id: "chatbot" },
+                option: extracted.targetDetails || "",
+                prefill: {
+                  recipientUsername: extracted.recipientUsername || "",
+                  notes:             extracted.notes             || "",
+                },
+              },
+            });
+          }, 1200);
+        } else {
+          // Tidak bisa detect jenis order, tanya ke LLM biasa
+          pushMsg("assistant", "Mau order joki atau gift item? Sebutkan juga username Roblox dan targetnya ya!");
+          setShowQuickReply(true);
+          setNavLinks([
+            { label: "Form Joki Roblox", to: "/pesan/joki-roblox" },
+            { label: "Form Gift Item", to: "/pesan/gift-item" },
+          ]);
+        }
+      } catch {
+        pushMsg("assistant", "Gagal memproses permintaan order. Coba ke halaman langsung ya!");
+        setNavLinks([
+          { label: "Form Joki Roblox", to: "/pesan/joki-roblox" },
+          { label: "Form Gift Item", to: "/pesan/gift-item" },
+        ]);
+      } finally {
+        setIsTyping(false);
+      }
+      return;
+    }
 
     const userMsg = { id: `${Date.now()}-user`, role: "user", text };
     const nextMsgs = [...messages, userMsg];
