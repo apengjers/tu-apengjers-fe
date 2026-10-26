@@ -6,6 +6,27 @@ const statusLabels = { new: "Baru", confirmed: "Dikonfirmasi", processing: "Dipr
 const nextStatuses = { new: ["confirmed", "cancelled"], confirmed: ["processing", "cancelled"], processing: ["completed", "cancelled"], completed: [], cancelled: [] };
 const money = (value) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value) || 0);
 
+function OrderPassword({ order }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!password) return;
+    const timer = setTimeout(() => setPassword(""), 30000);
+    const hide = () => { if (document.hidden) setPassword(""); };
+    document.addEventListener("visibilitychange", hide);
+    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", hide); };
+  }, [password]);
+  const reveal = async () => {
+    setLoading(true);
+    setError("");
+    try { const { data } = await api.post(`/api/orders/${order._id}/credentials`); setPassword(data.password); }
+    catch (err) { setError(err.response?.data?.message || "Password gagal dibuka"); }
+    finally { setLoading(false); }
+  };
+  return <div className="sm:col-span-2"><button type="button" disabled={loading} onClick={password ? () => setPassword("") : reveal} className="min-h-11 rounded-lg bg-slate-100 px-4 py-2 font-bold text-slate-800 hover:bg-slate-200 focus-visible:outline-2">{loading ? "Membuka…" : password ? "Sembunyikan password" : "Buka password pengerjaan"}</button>{password && <p className="mt-2 break-all rounded-lg bg-slate-50 p-3 text-sm">{password}</p>}{error && <p role="alert" className="mt-2 text-rose-800">{error}</p>}</div>;
+}
+
 export default function OrdersAdminPanel({ onOrdersChanged = async () => {}, initialStatus = "all" }) {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
@@ -61,9 +82,10 @@ export default function OrdersAdminPanel({ onOrdersChanged = async () => {}, ini
           </div>
           <div className="mt-4 grid gap-2 border-t border-slate-100 pt-3 text-xs sm:grid-cols-2">
             <p><span className="text-slate-500">WhatsApp: </span><a href={`https://wa.me/${String(order.whatsapp).replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="font-bold text-blue-800 hover:underline">{order.whatsapp}</a></p>
-            <p><span className="text-slate-500">Pembayaran: </span><span className="font-semibold text-slate-700">{order.paymentStatus === "paid" ? "Lunas" : order.requestedPaymentMethod || "Belum dipilih"}</span></p>
+            <p><span className="text-slate-500">Pembayaran: </span><span className="font-semibold text-slate-700">{order.paymentStatus === "paid" ? `Lunas${order.paymentType ? ` via ${order.paymentType}` : ""}` : `Belum dibayar${order.requestedPaymentMethod ? ` (pilihan: ${order.paymentChannel || order.requestedPaymentMethod})` : ""}`}</span></p>
             <p><span className="text-slate-500">Username Roblox: </span><span className="font-semibold text-slate-700">{order.recipientUsername || order.robloxUsername || "—"}</span></p>
             {order.displayName && <p><span className="text-slate-500">Display name: </span><span className="font-semibold text-slate-700">{order.displayName}</span></p>}
+            {order.jenis === "joki" && order.paymentStatus === "paid" && ["confirmed", "processing"].includes(order.status) && <OrderPassword order={order} />}
             {order.contactEmail && <p><span className="text-slate-500">Email: </span><span className="font-semibold text-slate-700">{order.contactEmail}</span></p>}
             {order.notes && <p className="whitespace-pre-line sm:col-span-2"><span className="text-slate-500">Catatan: </span><span className="font-semibold text-slate-700">{order.notes}</span></p>}
           </div>

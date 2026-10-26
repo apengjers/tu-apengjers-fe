@@ -10,6 +10,7 @@ import EwalletPage from './pages/EwalletPage';
 import PulsaPage from './pages/PulsaPage';
 import AplikasiPage from './pages/AplikasiPage';
 import CekTransaksi from './pages/CekTransaksi';
+import PaymentPage from './pages/PaymentPage';
 import AdminProduct from './pages/AdminProduct';
 import JokiRobloxPage from './pages/JokiRobloxPage';
 import GiftItemPage from './pages/GiftItemPage';
@@ -49,6 +50,7 @@ function App() {
           <Route path="admin" element={<AdminProduct />} />
           <Route path="*" element={<NotFound />} />
           <Route path="cek-transaksi" element={<CekTransaksi />} />
+          <Route path="pembayaran/:orderCode" element={<PaymentPage />} />
           <Route path="adminproduct" element={<AdminProduct />} />
         </Route>
       </Routes>
