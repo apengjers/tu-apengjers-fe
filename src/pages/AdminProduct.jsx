@@ -10,6 +10,7 @@ import AdminOverview from "../components/AdminOverview";
 import OrdersAdminPanel from "../components/OrdersAdminPanel";
 import CarouselAdminPanel from "../components/CarouselAdminPanel";
 import HotGamesAdminPanel from "../components/HotGamesAdminPanel";
+import NotificationsAdminPanel from "../components/NotificationsAdminPanel";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
@@ -74,6 +75,37 @@ export default function AdminProduct() {
       setErrorMessage("Data game belum bisa dimuat. Pastikan backend dan koneksi database berjalan.");
     }
   }, []);
+
+  // Poller untuk Notifikasi Perangkat (Browser Push Notification saat ada order baru)
+  useEffect(() => {
+    if (accessState !== "admin") return;
+    let lastKnownOrderCode = sessionStorage.getItem("apengjers_last_order_code") || "";
+
+    const checkNewOrders = async () => {
+      if (localStorage.getItem("apengjers_device_notif") !== "true") return;
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+      try {
+        const { data } = await api.get("/api/orders?status=new");
+        if (Array.isArray(data) && data.length > 0) {
+          const newest = data[0];
+          if (lastKnownOrderCode && newest.orderCode !== lastKnownOrderCode) {
+            new Notification(`🛒 Pesanan Baru: ${newest.productName}`, {
+              body: `Kode: ${newest.orderCode} • Total: Rp ${(newest.totalPrice || 0).toLocaleString("id-ID")}`,
+            });
+          }
+          lastKnownOrderCode = newest.orderCode;
+          sessionStorage.setItem("apengjers_last_order_code", newest.orderCode);
+        }
+      } catch {
+        // Abaikan jika gagal polling
+      }
+    };
+
+    checkNewOrders();
+    const interval = setInterval(checkNewOrders, 15000);
+    return () => clearInterval(interval);
+  }, [accessState]);
 
   useEffect(() => {
     if (accessState === "admin") {
@@ -183,12 +215,33 @@ export default function AdminProduct() {
         )}
 
         <nav className="mt-7 flex gap-1 overflow-x-auto border-b border-slate-200" aria-label="Navigasi admin">
-          {[{ id: "overview", label: "Ringkasan" }, { id: "orders", label: "Pesanan" }, { id: "products", label: "Katalog" }, { id: "games", label: "Game" }, { id: "hotGames", label: "Hot Games" }, { id: "carousel", label: "Carousel" }].map((tab) => <button key={tab.id} type="button" aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => setActiveTab(tab.id)} className={`shrink-0 border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab.id ? "border-blue-900 text-blue-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{tab.label}</button>)}
+          {[
+            { id: "overview", label: "Ringkasan" },
+            { id: "orders", label: "Pesanan" },
+            { id: "products", label: "Katalog" },
+            { id: "games", label: "Game" },
+            { id: "hotGames", label: "Hot Games" },
+            { id: "carousel", label: "Carousel" },
+            { id: "notifications", label: "Notifikasi" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-current={activeTab === tab.id ? "page" : undefined}
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 border-b-2 px-4 py-3 text-sm font-bold ${
+                activeTab === tab.id ? "border-blue-900 text-blue-900" : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
 
         {activeTab === "overview" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-6"><AdminOverview products={products} games={games} onNavigate={(tab, filter = "all") => { setOrderStatusFilter(filter); setActiveTab(tab); }} /></section>
           : activeTab === "orders" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><OrdersAdminPanel initialStatus={orderStatusFilter} /></section>
           : activeTab === "carousel" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><CarouselAdminPanel /></section>
+          : activeTab === "notifications" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><NotificationsAdminPanel /></section>
           : activeTab === "hotGames" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><HotGamesAdminPanel /></section>
           : <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
