@@ -129,6 +129,7 @@ export default function OrderFormPage({ orderType }) {
                     <p className="mt-1 text-xs text-slate-500">{selectedOption}</p>
                   </div>
                 )}
+                {isGift ? (
                   <div>
                     <label htmlFor="recipientUsername" className="mb-1.5 block text-sm font-bold text-slate-800">Username Roblox penerima <span className="text-red-500">*</span></label>
                     <input
@@ -238,7 +239,7 @@ export default function OrderFormPage({ orderType }) {
                   {!isGift && <SummaryRow label="Target" value={formData.targetDetails} />}
                   <SummaryRow label="Email kontak" value={formData.contactEmail || "Tidak diberikan"} />
                   <SummaryRow label="Catatan" value={formData.notes || "Tidak ada"} />
-                  <SummaryRow label={isGift ? "Harga katalog" : "Harga"} value={isGift ? `${formatRupiah(selection.item.price)} · konfirmasi ulang sebelum order` : "Menunggu konfirmasi"} />
+                  <SummaryRow label={isGift ? "Harga katalog" : "Harga"} value={isGift ? (fromChatbot ? "Konfirmasi penjual" : `${formatRupiah(selection.item?.price)} · konfirmasi ulang sebelum order`) : "Menunggu konfirmasi"} />
                 </dl>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <button type="button" onClick={() => setCurrentStep(1)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -324,7 +325,7 @@ export default function OrderFormPage({ orderType }) {
                 <p className="mt-1 text-xs leading-5 text-slate-500">{selectedOption}</p>
                 <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
                   <span className="text-xs text-slate-500">Harga</span>
-                  <span className="text-xs font-extrabold text-slate-800">{isGift ? formatRupiah(selection.item.price) : "Konfirmasi"}</span>
+                  <span className="text-xs font-extrabold text-slate-800">{isGift ? (fromChatbot ? "Konfirmasi penjual" : formatRupiah(selection.item?.price)) : "Konfirmasi"}</span>
                 </div>
                 {selectedPayment && (
                   <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">

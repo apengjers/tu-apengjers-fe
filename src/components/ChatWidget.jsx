@@ -237,6 +237,7 @@ export default function ChatWidget() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showQuickReply, setShowQuickReply] = useState(false);
   const [navLinks,       setNavLinks]       = useState(null);
+  const [pendingOrder,   setPendingOrder]   = useState(null); // simpan intent order saat belum login
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
@@ -366,6 +367,16 @@ export default function ChatWidget() {
       const userMsg = { id: `${Date.now()}-user`, role: "user", text };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
+
+      // Wajib login dulu
+      const user = await fetchCurrentUser();
+      if (!user) {
+        pushMsg("assistant", "Untuk order, kamu perlu login dulu ya! 🔒\nSetelah login, ordermu akan langsung diproses.");
+        setPendingOrder(text); // simpan pesan untuk diproses setelah login
+        setShowLoginModal(true);
+        return;
+      }
+
       setTypingLabel("Memproses permintaan order...");
       setIsTyping(true);
       try {
@@ -463,6 +474,12 @@ export default function ChatWidget() {
           if (prev[0]?.id === "welcome") return [buildWelcomeMsg(user), ...prev.slice(1)];
           return prev;
         });
+        // Kalau ada pending order, proses sekarang
+        if (pendingOrder) {
+          const orderText = pendingOrder;
+          setPendingOrder(null);
+          setTimeout(() => sendMessage(orderText), 300);
+        }
       }
     });
   };
