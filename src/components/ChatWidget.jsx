@@ -66,15 +66,40 @@ function detectNavIntent(text) {
 }
 
 // Keyword yang menandakan user mau langsung order
-const ORDER_TRIGGER_KEYWORDS = [
-  "orderin", "order in", "pesenin", "langsung order", "langsung pesan",
-  "mau order", "mau pesan", "ingin order", "ingin pesan",
-  "tolong order", "tolong pesan", "bikinin order", "buatin order",
+// Keyword order trigger — dua kategori:
+// 1. Strong trigger: langsung trigger tanpa perlu konteks tambahan
+// 2. Weak trigger: hanya trigger kalau ada juga kata konteks item/joki/gift
+const ORDER_STRONG_KEYWORDS = [
+  "orderin", "pesenin", "pesankan", "tolong pesankan", "tolong orderkan",
+  "langsung order", "langsung pesan", "langsung beli",
+  "tolong order", "tolong pesan", "tolong beli",
+  "bikinin order", "buatin order", "buatkan order",
+  "beli item", "beli joki", "beli gift",
+  "order item", "order joki", "order gift",
+  "pesan item", "pesan joki", "pesan gift",
+];
+
+const ORDER_WEAK_KEYWORDS = [
+  "aku mau", "aku ingin", "aku pengen", "aku pesan",
+  "saya mau", "saya ingin", "saya pesan",
+  "mau beli", "ingin beli", "pengen beli",
+  "mau order", "ingin order", "pengen order",
+];
+
+const ORDER_CONTEXT_KEYWORDS = [
+  "item", "joki", "gift", "lochness", "monster", "roblox",
+  "afk", "mancing", "rank", "level", "boost",
 ];
 
 function detectOrderTrigger(text) {
   const lower = text.toLowerCase();
-  return ORDER_TRIGGER_KEYWORDS.some((kw) => lower.includes(kw));
+  // Strong keyword langsung trigger
+  if (ORDER_STRONG_KEYWORDS.some((kw) => lower.includes(kw))) return true;
+  // Weak keyword hanya trigger kalau ada konteks item/joki
+  if (ORDER_WEAK_KEYWORDS.some((kw) => lower.includes(kw))) {
+    return ORDER_CONTEXT_KEYWORDS.some((ctx) => lower.includes(ctx));
+  }
+  return false;
 }
 // ─── Kategori ─────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -401,11 +426,37 @@ export default function ChatWidget() {
           }, 1200);
         } else if (extracted?.orderType === "gift") {
           pushMsg("assistant", "Oke! Saya akan arahkan kamu ke form order Gift Item dengan detail yang sudah diisi otomatis. 🎁");
-          setTimeout(() => {
+          setTimeout(async () => {
             setIsOpen(false);
+
+            // Cari produk gift yang cocok dengan nama yang disebutkan
+            let itemData = { itemName: extracted.itemName || "Gift Item", price: 0, id: "chatbot", stock: 99, options: [], requirements: [], experience: "Gift Roblox", kind: "Gift Item", description: "" };
+            if (extracted.itemName) {
+              try {
+                const { data: products } = await api.get("/api/products?jenis=gift");
+                const match = products.find((p) =>
+                  p.nama.toLowerCase().includes(extracted.itemName.toLowerCase()) ||
+                  extracted.itemName.toLowerCase().includes(p.nama.toLowerCase())
+                );
+                if (match) {
+                  itemData = {
+                    id: match._id,
+                    itemName: match.nama,
+                    price: match.harga,
+                    stock: match.stok || 0,
+                    experience: match.game?.nama || match.kategori || "Gift Roblox",
+                    kind: match.kategori || "Gift Item",
+                    description: match.deskripsi || "",
+                    options: [],
+                    requirements: [],
+                  };
+                }
+              } catch { /* pakai itemData default */ }
+            }
+
             navigate("/pesan/gift-item", {
               state: {
-                item: { itemName: "Gift Item", price: 0, id: "chatbot" },
+                item: itemData,
                 option: extracted.targetDetails || "Sesuai permintaan",
                 prefill: {
                   recipientUsername: extracted.recipientUsername || "",
