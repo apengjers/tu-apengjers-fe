@@ -15,9 +15,26 @@ import {
 } from 'react-icons/fi';
 import api from '../lib/api';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
+
+/* ------------------------------------------------------------------ */
+/* Google Client ID (diambil dari backend)                             */
+/* ------------------------------------------------------------------ */
+let googleClientIdPromise = null;
+
+function fetchGoogleClientId() {
+  if (!googleClientIdPromise) {
+    googleClientIdPromise = api
+      .get('/auth/google/config') // sesuaikan dengan endpoint di BE
+      .then(({ data }) => data.clientId || null)
+      .catch(() => {
+        googleClientIdPromise = null; // biar bisa dicoba lagi
+        return null;
+      });
+  }
+  return googleClientIdPromise;
+}
 
 /* ------------------------------------------------------------------ */
 /* Google Identity Services                                            */
@@ -47,46 +64,55 @@ function loadGoogleScript() {
 
 function GoogleButton({ mode, onCredential, onError }) {
   const holderRef = useRef(null);
-  const [status, setStatus] = useState(GOOGLE_CLIENT_ID ? 'loading' : 'missing');
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
     googleHandler = onCredential;
   }, [onCredential]);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return undefined;
     let cancelled = false;
 
-    loadGoogleScript()
-      .then(() => {
-        if (cancelled || !holderRef.current) return;
-        if (!gsiInitialized) {
-          window.google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: (response) => googleHandler(response.credential),
-          });
-          gsiInitialized = true;
-        }
-        const width = Math.min(Math.max(holderRef.current.offsetWidth, 200), 400);
-        holderRef.current.innerHTML = '';
-        window.google.accounts.id.renderButton(holderRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          shape: 'rectangular',
-          text: mode === 'daftar' ? 'signup_with' : 'signin_with',
-          logo_alignment: 'center',
-          locale: 'id',
-          width,
-        });
-        setStatus('ready');
-      })
-      .catch(() => {
+    (async () => {
+      const clientId = await fetchGoogleClientId();
+      if (cancelled) return;
+      if (!clientId) {
+        setStatus('missing');
+        return;
+      }
+
+      try {
+        await loadGoogleScript();
+      } catch {
         if (!cancelled) {
           setStatus('failed');
           onError?.('Google tidak bisa dimuat. Periksa koneksi internet kamu.');
         }
+        return;
+      }
+      if (cancelled || !holderRef.current) return;
+
+      if (!gsiInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response) => googleHandler(response.credential),
+        });
+        gsiInitialized = true;
+      }
+      const width = Math.min(Math.max(holderRef.current.offsetWidth, 200), 400);
+      holderRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(holderRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        shape: 'rectangular',
+        text: mode === 'daftar' ? 'signup_with' : 'signin_with',
+        logo_alignment: 'center',
+        locale: 'id',
+        width,
       });
+      setStatus('ready');
+    })();
 
     return () => {
       cancelled = true;
@@ -98,7 +124,7 @@ function GoogleButton({ mode, onCredential, onError }) {
       <button
         type="button"
         disabled
-        title="Isi VITE_GOOGLE_CLIENT_ID di file .env frontend"
+        title="Client ID Google belum tersedia dari server"
         className="flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-400"
       >
         <GoogleLogo muted />
@@ -512,18 +538,19 @@ export default function LoginModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-title"
-        className="modal-pop relative grid max-h-[100dvh] w-full max-w-[880px] overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-3xl md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"
+        className="modal-pop relative grid max-h-[100dvh] w-full max-w-[880px] overflow-hidden rounded-t-3xl bg-white text-left shadow-2xl sm:max-h-[92vh] sm:rounded-3xl md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"
       >
         {/* Panel kiri (hanya desktop) */}
-        <aside className="relative hidden flex-col justify-between overflow-hidden bg-blue-900 p-9 text-white md:flex">
+        <aside className="relative hidden flex-col justify-between overflow-hidden bg-blue-900 p-9 text-left text-white md:flex">
           <div
             aria-hidden="true"
-            className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-orange-500/90"
+            className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-orange-500/90"
           />
           <div
             aria-hidden="true"
-            className="absolute -bottom-10 -right-16 h-52 w-52 rounded-full border-[28px] border-white/10"
+            className="pointer-events-none absolute -bottom-12 -right-14 h-44 w-44 rounded-full border-[22px] border-white/10"
           />
+
           <div className="relative">
             <div className="mb-8 flex items-center gap-2.5">
               <img src="/logo-apengjers.png" alt="" className="h-10 w-10 rounded-lg bg-white/95 object-contain p-1" />
@@ -532,15 +559,16 @@ export default function LoginModal({
               </span>
             </div>
             <h2 className="text-2xl font-extrabold leading-snug">{panel.title}</h2>
-            <p className="mt-2 max-w-[28ch] text-sm leading-relaxed text-blue-100">{panel.text}</p>
+            <p className="mt-3 max-w-[30ch] text-sm leading-relaxed text-blue-100">{panel.text}</p>
           </div>
-          <ul className="relative mb-24 space-y-3.5">
+
+          <ul className="relative mb-40 space-y-3.5">
             {BENEFITS.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-sm font-medium text-blue-50">
+              <li key={text} className="flex items-start gap-3 text-sm font-medium text-blue-50">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10">
                   <Icon aria-hidden="true" className="h-4 w-4" />
                 </span>
-                {text}
+                <span className="min-w-0 flex-1 pt-1.5 leading-snug">{text}</span>
               </li>
             ))}
           </ul>
