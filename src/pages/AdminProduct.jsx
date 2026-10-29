@@ -11,6 +11,7 @@ import OrdersAdminPanel from "../components/OrdersAdminPanel";
 import CarouselAdminPanel from "../components/CarouselAdminPanel";
 import HotGamesAdminPanel from "../components/HotGamesAdminPanel";
 import NotificationsAdminPanel from "../components/NotificationsAdminPanel";
+import VouchersAdminPanel from "../components/VouchersAdminPanel";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
@@ -223,6 +224,7 @@ export default function AdminProduct() {
             { id: "hotGames", label: "Hot Games" },
             { id: "carousel", label: "Carousel" },
             { id: "notifications", label: "Notifikasi" },
+            { id: "vouchers", label: "Voucher" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -243,6 +245,7 @@ export default function AdminProduct() {
           : activeTab === "carousel" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><CarouselAdminPanel /></section>
           : activeTab === "notifications" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><NotificationsAdminPanel /></section>
           : activeTab === "hotGames" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><HotGamesAdminPanel /></section>
+          : activeTab === "vouchers" ? <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"><VouchersAdminPanel /></section>
           : <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div><h2 className="text-base font-extrabold text-slate-900">{activeTab === "games" ? "Daftar game" : "Daftar produk"}</h2><p className="mt-1 text-xs text-slate-500">Data katalog tersimpan melalui backend.</p></div>

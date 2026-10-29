@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link, useLocation } from "react-router-dom";
 import api from "../lib/api";
@@ -12,6 +12,8 @@ import {
   FiInfo,
   FiShield,
   FiSmartphone,
+  FiTag,
+  FiX,
 } from "react-icons/fi";
 
 // id channel harus sama dengan PAYMENT_CHANNELS di backend (midtransService.js)
@@ -67,6 +69,13 @@ export default function OrderFormPage({ orderType }) {
   const [submitError, setSubmitError] = useState("");
   const [paymentState, setPaymentState] = useState("idle"); // idle | opening | error
   const [paymentError, setPaymentError] = useState("");
+  const [availableVouchers, setAvailableVouchers] = useState([]);
+  const [voucherInput, setVoucherInput] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherMessage, setVoucherMessage] = useState("");
+  const [voucherError, setVoucherError] = useState("");
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
+  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
   const [formData, setFormData] = useState({
     robloxUsername: "",
     robloxPassword: "",
@@ -87,10 +96,21 @@ export default function OrderFormPage({ orderType }) {
   const unitPrice = isGift ? selection?.item?.price : selection?.package?.price;
   const hasCatalogPrice = Number.isFinite(Number(unitPrice));
   const catalogTotal = hasCatalogPrice ? Number(unitPrice) * quantity : null;
+  const discountedTotal = catalogTotal === null ? null : Math.max(0, catalogTotal - (appliedVoucher?.discountAmount || 0));
   const catalogPath = isGift ? "/gift-item" : "/joki-roblox";
   const selectedMethod = paymentMethods.find((method) => method.id === selectedPayment);
   const selectedChannelName = selectedMethod?.channels.find((channel) => channel.id === selectedChannel)?.name;
   const paymentLabel = selectedMethod ? (selectedMethod.channels.length > 1 && selectedChannelName ? `${selectedMethod.name} · ${selectedChannelName}` : selectedMethod.name) : "";
+
+  useEffect(() => {
+    let active = true;
+    setIsLoadingVouchers(true);
+    api.get("/api/vouchers")
+      .then(({ data }) => { if (active && Array.isArray(data)) setAvailableVouchers(data); })
+      .catch(() => { if (active) setVoucherError("Promo belum bisa dimuat. Kamu tetap bisa memasukkan kode secara manual."); })
+      .finally(() => { if (active) setIsLoadingVouchers(false); });
+    return () => { active = false; };
+  }, []);
 
   const updateField = (event) => {
     const { name, value, checked, type } = event.target;
@@ -127,6 +147,26 @@ export default function OrderFormPage({ orderType }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const applyVoucher = async (code = voucherInput) => {
+    const normalizedCode = code.trim().toUpperCase();
+    if (!normalizedCode || catalogTotal === null) return;
+    setIsApplyingVoucher(true);
+    setVoucherError("");
+    setVoucherMessage("");
+    try {
+      const productId = isGift ? selection.item.productId : selection.package.id;
+      const { data } = await api.post("/api/vouchers/validate", { code: normalizedCode, subtotal: catalogTotal, productId, whatsapp: formData.whatsapp });
+      setAppliedVoucher(data);
+      setVoucherInput(data.code);
+      setVoucherMessage(`${data.title} berhasil digunakan.`);
+    } catch (error) {
+      setAppliedVoucher(null);
+      setVoucherError(error.response?.data?.message || "Kode promo gagal diperiksa. Coba lagi.");
+    } finally {
+      setIsApplyingVoucher(false);
+    }
+  };
+
   const startPayment = async (orderCode) => {
     setPaymentState("opening");
     setPaymentError("");
@@ -157,6 +197,7 @@ export default function OrderFormPage({ orderType }) {
         notes,
         requestedPaymentMethod: selectedPayment,
         paymentChannel: selectedChannel,
+        voucherCode: appliedVoucher?.code || "",
       });
       setOrderResult(data.order);
       setFormData((current) => ({ ...current, robloxPassword: "" }));
@@ -316,6 +357,8 @@ export default function OrderFormPage({ orderType }) {
                   {isGift && <SummaryRow label="Catatan" value={formData.notes || "Tidak ada"} />}
                   <SummaryRow label="Harga per unit" value={hasCatalogPrice ? formatRupiah(unitPrice) : "Menunggu konfirmasi"} />
                   <SummaryRow label="Total katalog" value={hasCatalogPrice ? formatRupiah(catalogTotal) : "Menunggu konfirmasi"} />
+                  {appliedVoucher && <SummaryRow label={`Promo ${appliedVoucher.code}`} value={`−${formatRupiah(appliedVoucher.discountAmount)}`} />}
+                  {appliedVoucher && <SummaryRow label="Total setelah promo" value={formatRupiah(discountedTotal)} />}
                 </dl>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <button type="button" onClick={() => setCurrentStep(1)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -440,6 +483,10 @@ export default function OrderFormPage({ orderType }) {
                   <span className="text-xs text-slate-500">Total katalog</span>
                   <span className="text-xs font-extrabold text-slate-800">{hasCatalogPrice ? formatRupiah(catalogTotal) : "Konfirmasi"}</span>
                 </div>
+                {appliedVoucher && <>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3"><span className="text-xs text-slate-500">Promo {appliedVoucher.code}</span><span className="text-xs font-extrabold text-emerald-700">−{formatRupiah(appliedVoucher.discountAmount)}</span></div>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3"><span className="text-xs font-bold text-slate-700">Total setelah promo</span><span className="text-xs font-extrabold text-slate-900">{formatRupiah(discountedTotal)}</span></div>
+                </>}
                 {selectedPayment && (
                   <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
                     <span className="text-xs text-slate-500">Metode</span>
@@ -451,6 +498,20 @@ export default function OrderFormPage({ orderType }) {
                 <FiArrowLeft aria-hidden="true" /> Ganti pilihan
               </Link>
             </section>
+
+            {currentStep === 2 && <section className="rounded-3xl border border-orange-100 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-600"><FiTag aria-hidden="true" /></span><div><h2 className="text-sm font-extrabold text-slate-900">Redeem voucher</h2><p className="mt-0.5 text-xs text-slate-500">Pilih promo atau masukkan kode.</p></div></div>
+              <form className="mt-4 flex gap-2" onSubmit={(event) => { event.preventDefault(); applyVoucher(); }}>
+                <label className="sr-only" htmlFor="voucherCode">Kode promo</label>
+                <input id="voucherCode" value={voucherInput} onChange={(event) => { setVoucherInput(event.target.value.toUpperCase()); setVoucherError(""); setVoucherMessage(""); }} disabled={Boolean(appliedVoucher)} placeholder="Contoh: HEMAT10" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold uppercase outline-none placeholder:font-normal placeholder:normal-case focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-slate-50" />
+                {appliedVoucher ? <button type="button" onClick={() => { setAppliedVoucher(null); setVoucherInput(""); setVoucherMessage(""); }} aria-label="Hapus voucher" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600 hover:bg-slate-50"><FiX aria-hidden="true" /> Hapus</button> : <button type="submit" disabled={!voucherInput.trim() || isApplyingVoucher || catalogTotal === null} className="rounded-xl bg-orange-500 px-3 text-xs font-extrabold text-white hover:bg-orange-400 disabled:cursor-not-allowed disabled:bg-slate-300">{isApplyingVoucher ? "Cek…" : "Gunakan"}</button>}
+              </form>
+              <div className="mt-4"><p className="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Promo tersedia</p>{isLoadingVouchers ? <p className="text-xs text-slate-500">Memuat promo…</p> : availableVouchers.length ? <div className="grid gap-2">{availableVouchers.map((voucher) => {
+                const scopeLabel = voucher.scope === "joki" ? "Khusus Joki Roblox" : voucher.scope === "gift" ? "Khusus Gift Item" : voucher.scope === "game" ? `Game: ${(voucher.eligibleGames || []).map((game) => game.nama).filter(Boolean).join(", ")}` : "Semua produk";
+                return <button key={voucher.code} type="button" disabled={Boolean(appliedVoucher) || isApplyingVoucher || catalogTotal === null} onClick={() => { setVoucherInput(voucher.code); setVoucherError(""); setVoucherMessage(""); }} aria-pressed={voucherInput === voucher.code} className={`rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${voucherInput === voucher.code ? "border-orange-300 bg-orange-50" : "border-slate-200 hover:border-orange-300 hover:bg-orange-50/60"}`}><span className="block text-xs font-black text-slate-900">{voucher.code}</span><span className="mt-1 block text-[10px] leading-4 text-slate-500">{voucher.description}</span><span className="mt-1 block text-[10px] font-bold leading-4 text-blue-800">{scopeLabel}</span><span className="mt-1 block text-[10px] text-slate-500">{voucher.oneUsePerUser === false ? "Tanpa batas per user" : "Maks. 1x per user"}</span></button>;
+              })}</div> : <p className="text-xs text-slate-500">Belum ada promo yang tersedia.</p>}</div>
+              {voucherError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 p-3 text-xs leading-5 text-rose-800">{voucherError}</p>}{voucherMessage && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs leading-5 text-emerald-800">{voucherMessage}</p>}
+            </section>}
 
             <section className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
               <h2 className="flex items-center gap-2 text-sm font-extrabold text-blue-950">

@@ -7,6 +7,7 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
+  overflow-x: clip;
   background-color: #f9fafb;
 }
 
@@ -18,4 +19,40 @@ html, body {
 .modal-pop { animation: modal-pop 0.22s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .modal-pop { animation: none; }
+}
+
+.page-section-reveal {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition: opacity 650ms ease, transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.page-section-reveal[data-scroll-reveal="top"] {
+  transform: translate3d(0, -28px, 0);
+}
+
+.page-section-reveal[data-scroll-reveal="left"] {
+  transform: translate3d(-36px, 0, 0);
+}
+
+.page-section-reveal[data-scroll-reveal="right"] {
+  transform: translate3d(36px, 0, 0);
+}
+
+.page-section-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-section-reveal,
+  .page-section-reveal[data-scroll-reveal="top"],
+  .page-section-reveal[data-scroll-reveal="left"],
+  .page-section-reveal[data-scroll-reveal="right"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

@@ -48,7 +48,7 @@ export default function CekTransaksi() {
     .catch(() => setErrorMessage("Halaman pembayaran gagal dibuka. Coba lagi sebentar."));
 
   // Datang dari redirect Midtrans (ada ?order_id=...)
-  const returnedFromPayment = Boolean(searchParams.get("order_id"));
+  const returnedFromPayment = Boolean(searchParams.get("order_id") || searchParams.get("orderCode"));
 
   useEffect(() => {
     const codeFromUrl = searchParams.get("orderCode") || searchParams.get("order_id");
@@ -83,9 +83,10 @@ export default function CekTransaksi() {
             {order && <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-700">{order.jenis === "gift" ? "GIFT ITEM" : "JOKI ROBLOX"}</p><h2 className="mt-1 text-lg font-black text-slate-900">{order.orderCode}</h2></div><span className="rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-blue-900">{statusLabels[order.status] || order.status}</span></div>
               <p className="mt-3 text-sm font-bold text-slate-800">{order.gameName && `${order.gameName} · `}{order.productName} × {order.quantity}</p>
-              <div className="mt-4 grid gap-3 border-t border-blue-100 pt-4 sm:grid-cols-2"><div><p className="text-[10px] font-bold text-slate-500">Total katalog</p><p className="mt-1 text-sm font-extrabold text-slate-900">{money(order.totalPrice)}</p></div><div><p className="text-[10px] font-bold text-slate-500">Pembayaran</p><p className="mt-1 text-sm font-extrabold text-slate-900">{order.paymentStatus === "paid" ? "Lunas" : order.paymentStatus === "refunded" ? "Dikembalikan" : order.status === "cancelled" ? "Tidak dibayar" : "Belum dibayar"}</p></div></div>
+
               {order.status === "new" && order.paymentStatus === "unpaid" && <button type="button" onClick={handlePay} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-orange-400"><FiCreditCard aria-hidden="true" /> Bayar sekarang</button>}
               {order.status === "cancelled" && <p className="mt-4 rounded-xl bg-white p-3 text-xs font-semibold text-slate-600">Order ini dibatalkan (misalnya karena pembayaran tidak selesai tepat waktu). Hubungi admin jika kamu perlu bantuan.</p>}
+              <div className="mt-4 grid gap-3 border-t border-blue-100 pt-4 sm:grid-cols-2"><div><p className="text-[10px] font-bold text-slate-500">Total order</p><p className="mt-1 text-sm font-extrabold text-slate-900">{money(order.totalPrice)}</p>{order.discountAmount > 0 && <p className="mt-1 text-[10px] font-semibold text-emerald-700">Promo {order.voucherCode}: −{money(order.discountAmount)}</p>}</div><div><p className="text-[10px] font-bold text-slate-500">Pembayaran</p><p className="mt-1 text-sm font-extrabold text-slate-900">{order.paymentStatus === "paid" ? "Lunas" : order.paymentStatus === "refunded" ? "Dikembalikan" : order.status === "cancelled" ? "Tidak dibayar" : "Belum dibayar"}</p></div></div>
             </div>}
             <Link to="/cara-order" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-800 hover:text-orange-600">Lihat panduan order <FiArrowRight aria-hidden="true" /></Link>
           </motion.section>
