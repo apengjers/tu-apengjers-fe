@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { FiBookOpen, FiGift, FiHome, FiLogIn, FiLogOut, FiMenu, FiSettings, FiX, FiZap } from "react-icons/fi";
+import { FiBookOpen, FiGift, FiHome, FiList, FiLogIn, FiLogOut, FiMenu, FiSettings, FiUser, FiX, FiZap } from "react-icons/fi";
 import { TbClipboardCheck } from "react-icons/tb";
 import LoginModal from "./LoginModal";
+import UserMenu from "./UserMenu";
 import api from "../lib/api";
 
 const navItems = [
@@ -67,6 +68,18 @@ function Navbar() {
     if (resetToken) setShowLoginModal(true);
   }, [resetToken]);
 
+  // Halaman lain bisa membuka modal login / memperbarui data user (mis. setelah edit profil)
+  useEffect(() => {
+    const onOpenLogin = () => setShowLoginModal(true);
+    const onUserUpdated = (event) => setUser((prev) => (prev ? { ...prev, ...event.detail } : prev));
+    window.addEventListener("open-login", onOpenLogin);
+    window.addEventListener("user:updated", onUserUpdated);
+    return () => {
+      window.removeEventListener("open-login", onOpenLogin);
+      window.removeEventListener("user:updated", onUserUpdated);
+    };
+  }, []);
+
   const clearResetParam = () => {
     if (!searchParams.has("reset")) return;
     const next = new URLSearchParams(searchParams);
@@ -128,18 +141,7 @@ function Navbar() {
                     Admin
                   </NavLink>
                 )}
-                <span className="flex items-center gap-2 rounded-xl bg-slate-50 py-1 pl-1 pr-3 text-sm font-semibold text-slate-800">
-                  <Avatar />
-                  {firstName}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-rose-50 hover:text-rose-700"
-                >
-                  <FiLogOut aria-hidden="true" className="h-4 w-4" />
-                  Keluar
-                </button>
+                <UserMenu user={user} onLogout={handleLogout} />
               </div>
             ) : (
               <button
@@ -190,6 +192,14 @@ function Navbar() {
                     <Avatar />
                     {user.displayName || user.email}
                   </div>
+                  <NavLink to="/riwayat" className={({ isActive }) => getLinkClass(isActive, true)}>
+                    <FiList aria-hidden="true" className="h-4 w-4" />
+                    Riwayat Transaksi
+                  </NavLink>
+                  <NavLink to="/profil" className={({ isActive }) => getLinkClass(isActive, true)}>
+                    <FiUser aria-hidden="true" className="h-4 w-4" />
+                    Pengaturan Profil
+                  </NavLink>
                   {user.role === "admin" && (
                     <NavLink
                       to="/adminproduct"

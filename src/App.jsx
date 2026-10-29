@@ -16,6 +16,8 @@ import JokiRobloxPage from './pages/JokiRobloxPage';
 import GiftItemPage from './pages/GiftItemPage';
 import OrderFormPage from './pages/OrderFormPage';
 import CaraOrderPage from './pages/CaraOrderPage';
+import RiwayatTransaksi from './pages/RiwayatTransaksi';
+import ProfilePage from './pages/ProfilPage';
 
 
 function HomePage() {
@@ -47,6 +49,8 @@ function App() {
           <Route path="pesan/joki-roblox" element={<OrderFormPage orderType="joki" />} />
           <Route path="pesan/gift-item" element={<OrderFormPage orderType="gift" />} />
           <Route path="cara-order" element={<CaraOrderPage />} />
+          <Route path="riwayat" element={<RiwayatTransaksi />} />
+          <Route path="profil" element={<ProfilePage />} />
           <Route path="admin" element={<AdminProduct />} />
           <Route path="*" element={<NotFound />} />
           <Route path="cek-transaksi" element={<CekTransaksi />} />
