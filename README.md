@@ -18,17 +18,17 @@ npm install
 npm run dev
 ```
 
-Frontend berjalan di `http://localhost:5173`. Pastikan backend sudah berjalan di `http://localhost:3001`.
+Frontend berjalan di `http://localhost:5173`. Pastikan backend sudah berjalan di `http://localhost:3001`. Permintaan `/api` dan `/auth` diteruskan oleh Vite ke backend.
 
 ## Konfigurasi
 
-Buat file `.env` di folder `frontend/` jika perlu override URL backend:
+Konfigurasi aplikasi berada di `backend/.env`; frontend tidak memerlukan file `.env` sendiri. Untuk mengubah alamat backend yang dipakai proxy Vite, atur `API_PROXY_TARGET` di `backend/.env`:
 
 ```env
-VITE_API_URL=http://localhost:3001
+API_PROXY_TARGET=http://localhost:3001
 ```
 
-Default sudah mengarah ke `http://localhost:3001` jika tidak diset.
+Nilai default proxy adalah `http://localhost:3001` jika variabel tersebut tidak diset. Setelah mengubahnya, restart Vite.
 
 ## Struktur Halaman
 
