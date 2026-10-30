@@ -1,14 +1,25 @@
 // src/components/Layout.jsx
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ChatWidget from "./ChatWidget";
-import { Outlet, useLocation } from "react-router-dom";
-import { useLayoutEffect, useRef } from "react";
+import api from "../lib/api";
 
 export default function Layout() {
   const location = useLocation();
   const skipScrollReveal = location.pathname === "/cek-transaksi";
   const pageContentRef = useRef(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Cek role user — kalau admin, sembunyikan chatbot user
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) { setIsAdmin(false); return; }
+    api.get("/auth/me")
+      .then(({ data }) => setIsAdmin(data?.role === "admin"))
+      .catch(() => setIsAdmin(false));
+  }, [location.pathname]);
 
   useLayoutEffect(() => {
     if (skipScrollReveal) return undefined;
@@ -77,7 +88,7 @@ export default function Layout() {
       <Navbar />
       <div ref={pageContentRef} className="flex-1 pt-20"><Outlet /></div>
       <Footer />
-      <ChatWidget />
+      {!isAdmin && <ChatWidget />}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import CarouselAdminPanel from "../components/CarouselAdminPanel";
 import HotGamesAdminPanel from "../components/HotGamesAdminPanel";
 import NotificationsAdminPanel from "../components/NotificationsAdminPanel";
 import VouchersAdminPanel from "../components/VouchersAdminPanel";
+import AdminChatWidget from "../components/AdminChatWidget";
 
 export default function AdminProduct() {
   const [products, setProducts] = useState([]);
@@ -269,6 +270,7 @@ export default function AdminProduct() {
         </div>
       )}
       {isGameFormOpen && <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsGameFormOpen(false); }}><GameForm initialData={selectedGame} onSuccess={handleGameFormSuccess} onCancel={() => setIsGameFormOpen(false)} /></div>}
+      <AdminChatWidget />
     </>
   );
 }
