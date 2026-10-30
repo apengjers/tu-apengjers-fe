@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { FiMessageCircle, FiSend, FiX, FiCopy, FiCheck, FiArrowRight } from "react-icons/fi";
+import { FiMessageCircle, FiSend, FiX, FiCopy, FiCheck, FiArrowRight, FiSearch } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
@@ -103,11 +103,12 @@ function detectOrderTrigger(text) {
 }
 // ─── Kategori ─────────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { id: "joki-item",  label: "🎮 Joki & Item",  hint: "jasa joki dan item/gift game" },
-  { id: "cara-pesan", label: "📖 Cara Pesan",   hint: null, static: true },
-  { id: "pembayaran", label: "💳 Pembayaran",   hint: null, static: true },
-  { id: "faq",        label: "❓ FAQ",           hint: null, static: true },
-  { id: "order",      label: "📦 Cek Pesanan",  hint: null, requiresAuth: true },
+  { id: "joki-item",   label: "🎮 Joki & Item",    hint: "jasa joki dan item/gift game" },
+  { id: "cara-pesan",  label: "📖 Cara Pesan",     hint: null, static: true },
+  { id: "pembayaran",  label: "💳 Pembayaran",     hint: null, static: true },
+  { id: "faq",         label: "❓ FAQ",             hint: null, static: true },
+  { id: "track",       label: "🔍 Track Order",    hint: null, trackOrder: true },
+  { id: "order",       label: "📦 Cek Pesanan",    hint: null, requiresAuth: true },
 ];
 
 // ─── Konten statis ────────────────────────────────────────────────────────────
@@ -262,10 +263,13 @@ export default function ChatWidget() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showQuickReply, setShowQuickReply] = useState(false);
   const [navLinks,       setNavLinks]       = useState(null);
-  const [pendingOrder,   setPendingOrder]   = useState(null); // simpan intent order saat belum login
+  const [pendingOrder,   setPendingOrder]   = useState(null);
+  const [trackMode,      setTrackMode]      = useState(false); // mode input order code
+  const [trackInput,     setTrackInput]     = useState("");
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
+  const trackInputRef  = useRef(null);
   const navigate       = useNavigate();
 
   // ── Cek login ─────────────────────────────────────────────────────────────
@@ -310,11 +314,15 @@ export default function ChatWidget() {
   // ── Focus & ESC ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
-    inputRef.current?.focus();
+    if (trackMode) {
+      trackInputRef.current?.focus();
+    } else {
+      inputRef.current?.focus();
+    }
     const onKey = (e) => { if (e.key === "Escape") setIsOpen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen]);
+  }, [isOpen, trackMode]);
 
   // ── Push pesan ────────────────────────────────────────────────────────────
   const pushMsg = (role, text) =>
@@ -327,6 +335,8 @@ export default function ChatWidget() {
     setInput("");
     setShowQuickReply(false);
     setNavLinks(null);
+    setTrackMode(false);
+    setTrackInput("");
   };
 
   // ── Klik kategori ─────────────────────────────────────────────────────────
@@ -347,7 +357,19 @@ export default function ChatWidget() {
       return;
     }
 
-    // Cek pesanan — wajib login
+    // Track order — wajib login, lalu input order code
+    if (cat.trackOrder) {
+      const user = await fetchCurrentUser();
+      if (!user) {
+        pushMsg("assistant", "Untuk track order, kamu perlu login dulu ya! 🔒");
+        setShowLoginModal(true);
+        return;
+      }
+      setActiveCategory(cat);
+      setTrackMode(true);
+      pushMsg("assistant", "Masukkan kode order kamu (contoh: `ORD-XXXXXXXXXX`) untuk melihat status pesanan.");
+      return;
+    }
     if (cat.requiresAuth) {
       const user = await fetchCurrentUser();
       if (!user) { setShowLoginModal(true); return; }
@@ -377,6 +399,57 @@ export default function ChatWidget() {
     // Chat LLM (joki-item)
     setActiveCategory(cat);
     pushMsg("assistant", `Oke! Kamu bisa tanya seputar **${cat.hint}** di ApengJers.\nApa yang ingin kamu ketahui?`);
+  };
+
+  // ── Track order by order code ─────────────────────────────────────────────
+  const submitTrackOrder = async (e) => {
+    e.preventDefault();
+    const code = trackInput.trim();
+    if (!code || isTyping) return;
+
+    pushMsg("user", `Track order: ${code}`);
+    setTrackInput("");
+    setTypingLabel("Mengambil status pesanan...");
+    setIsTyping(true);
+
+    try {
+      const { data } = await api.get(`/api/orders/mine/${code}`);
+      const o = data;
+
+      const statusMap = {
+        new:        "🆕 Baru masuk",
+        confirmed:  "✅ Dikonfirmasi",
+        processing: "⚙️ Sedang diproses",
+        completed:  "🎉 Selesai",
+        cancelled:  "❌ Dibatalkan",
+      };
+      const payMap = {
+        unpaid:   "⏳ Belum dibayar",
+        paid:     "✅ Sudah dibayar",
+        refunded: "↩️ Direfund",
+      };
+
+      pushMsg("assistant",
+        `**Detail Order ${o.orderCode}**\n\n` +
+        `📦 Produk: ${o.productName}\n` +
+        `🎮 Game: ${o.gameName || "-"}\n` +
+        `📊 Status: ${statusMap[o.status] || o.status}\n` +
+        `💳 Pembayaran: ${payMap[o.paymentStatus] || o.paymentStatus}\n` +
+        `💰 Total: Rp${o.totalPrice?.toLocaleString("id-ID")}\n` +
+        `📅 Tanggal: ${new Date(o.createdAt).toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+      );
+    } catch (err) {
+      if (err.response?.status === 404) {
+        pushMsg("assistant", `Order dengan kode **${code}** tidak ditemukan. Pastikan kode sudah benar dan order milik akun kamu.`);
+      } else if (err.response?.status === 401) {
+        pushMsg("assistant", "Sesi login habis. Silakan login ulang.");
+        setShowLoginModal(true);
+      } else {
+        pushMsg("assistant", "Gagal mengambil data order. Coba lagi.");
+      }
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   // ── Kirim chat ke LLM ─────────────────────────────────────────────────────
@@ -642,7 +715,7 @@ export default function ChatWidget() {
             </div>
 
             {/* Input */}
-            {!isOrderMode && (
+            {!isOrderMode && !trackMode && (
               <form className="chat-composer"
                 onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
                 <label className="sr-only" htmlFor="chat-message">Tulis pesan</label>
@@ -662,6 +735,24 @@ export default function ChatWidget() {
                 />
                 <button type="submit" aria-label="Kirim pesan" disabled={!input.trim() || isTyping}>
                   <FiSend />
+                </button>
+              </form>
+            )}
+
+            {/* Form track order */}
+            {trackMode && (
+              <form className="chat-composer" onSubmit={submitTrackOrder}>
+                <label className="sr-only" htmlFor="track-input">Kode Order</label>
+                <input
+                  id="track-input"
+                  ref={trackInputRef}
+                  value={trackInput}
+                  onChange={(e) => setTrackInput(e.target.value)}
+                  placeholder="Contoh: ORD-XXXXXXXXXX"
+                  maxLength={50}
+                />
+                <button type="submit" aria-label="Cek order" disabled={!trackInput.trim() || isTyping}>
+                  <FiSearch />
                 </button>
               </form>
             )}
